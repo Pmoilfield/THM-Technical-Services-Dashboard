@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 
-const STATUSES = ['New', 'In Review', 'Lost']
+const STATUSES = ['Pipeline', 'New', 'In Review', 'Estimating', 'Submitted', 'Lost']
 
 export default function UpdateStatusButton({ proposalId, currentStatus }) {
   const router = useRouter()

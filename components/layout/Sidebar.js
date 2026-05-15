@@ -5,7 +5,7 @@ import { createBrowserSupabase } from '@/lib/supabase'
 
 const NAV = [
   { href: '/dashboard',      label: 'Dashboard'    },
-  { href: '/proposals',      label: 'Proposals'    },
+  { href: '/proposals',      label: 'BD Tracker'   },
   { href: '/projects',       label: 'Projects' },
   { href: '/field-tickets',    label: 'Field Tickets'},
   { href: '/purchase-orders', label: 'Purchase Orders' },
