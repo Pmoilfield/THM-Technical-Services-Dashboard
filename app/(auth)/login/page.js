@@ -110,17 +110,21 @@ export default function LoginPage() {
               </div>
             </form>
 
-            <div style={{ textAlign: 'center', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => { setMode('reset'); setError('') }}
-                style={{ background: 'none', border: 'none', color: '#c41e3a', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                style={{ width: '100%', padding: '11px', fontSize: '14px', borderRadius: '12px', border: '2px solid #c41e3a', background: 'white', color: '#c41e3a', cursor: 'pointer', fontWeight: 600 }}
               >
-                Forgot password / Set your password
+                New user? Set up your account
               </button>
-              <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
-                No account? Contact your administrator to get access.
-              </p>
+              <button
+                type="button"
+                onClick={() => { setMode('reset'); setError('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+              >
+                Forgot password
+              </button>
             </div>
           </>
         ) : resetSent ? (
