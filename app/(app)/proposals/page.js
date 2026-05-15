@@ -2,8 +2,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { formatDate, statusClass } from '@/lib/calculations'
 import ProposalSubmittedDatePicker from '@/components/proposals/ProposalSubmittedDatePicker'
-
-const PRIORITY_CLS = { High: 'bad', Normal: '', Low: '' }
+import OpenProposalsTable from '@/components/proposals/OpenProposalsTable'
 
 function money(v) {
   if (!v) return '—'
@@ -80,57 +79,7 @@ export default async function ProposalsPage() {
         </div>
       )}
 
-      {/* Active proposals */}
-      <section className="panel">
-        <h2>Open proposals</h2>
-        <div className="table-wrap" style={{ marginTop: '12px' }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Contact</th>
-                <th>Description</th>
-                <th>Location</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th className="numeric">Est. Value</th>
-                <th>Added</th>
-                <th>Due</th>
-                <th>Submitted by</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(active || []).length ? (active || []).map(p => (
-                <tr key={p.id}>
-                  <td><strong>{p.client_name || '—'}</strong></td>
-                  <td>
-                    {p.contact_name || '—'}
-                    {p.contact_phone && <div className="fine-print">{p.contact_phone}</div>}
-                    {p.contact_email && <div className="fine-print">{p.contact_email}</div>}
-                  </td>
-                  <td style={{ maxWidth: '240px' }}>{p.project_description || '—'}</td>
-                  <td>{p.location || '—'}</td>
-                  <td><span className={`status-pill ${PRIORITY_CLS[p.priority] || ''}`}>{p.priority}</span></td>
-                  <td><span className={`status-pill ${p.status === 'New' ? 'status-active' : ''}`}>{p.status}</span></td>
-                  <td className="numeric">{money(p.estimated_value)}</td>
-                  <td>{p.proposal_added_date ? shortDate(p.proposal_added_date) : '—'}</td>
-                  <td>{p.due_date ? formatDate(p.due_date) : '—'}</td>
-                  <td>{p.submitted_by || '—'}</td>
-                  <td className="nowrap">
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <Link href={`/proposals/${p.id}`}><button className="small">View</button></Link>
-                      <Link href={`/proposals/${p.id}/edit`}><button className="small">Edit</button></Link>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="10" className="empty">No open proposals. <Link href="/proposals/new">Add one →</Link></td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <OpenProposalsTable proposals={active || []} />
 
       {/* Pipeline tracking — converted proposals */}
       {(converted || []).length > 0 && (
