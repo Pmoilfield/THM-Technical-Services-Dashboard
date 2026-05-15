@@ -154,7 +154,7 @@ export default function ProjectsTable({ rows }) {
             {filtered.length ? filtered.map(({ project, estimate, gst, accrualsToDate, remaining, spentPct }) => (
               <tr key={project.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/projects/${project.id}`)}>
                 <td style={{ whiteSpace: 'nowrap' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: project.internal_job_no ? '#111' : '#d1d5db' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: project.internal_job_no ? '#111' : '#d1d5db' }}>
                     {project.internal_job_no || '—'}
                   </span>
                 </td>
