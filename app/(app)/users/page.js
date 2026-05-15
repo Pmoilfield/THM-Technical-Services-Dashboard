@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server'
 import { formatDate } from '@/lib/calculations'
+import NewUserForm from './NewUserForm'
 
 export default async function UsersPage() {
   const supabase = await createServerSupabase()
@@ -13,12 +14,8 @@ export default async function UsersPage() {
       <div className="page-header">
         <div className="split">
           <div><h1>Users</h1><p className="muted">{(users || []).length} team members</p></div>
+          <NewUserForm />
         </div>
-      </div>
-
-      <div className="notice">
-        To invite a new team member, go to your <strong>Supabase Dashboard → Authentication → Users → Invite user</strong>.
-        Once they accept and log in, set their role below.
       </div>
 
       <section className="panel">
