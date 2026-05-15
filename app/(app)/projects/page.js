@@ -24,7 +24,7 @@ export default async function ProjectsPage() {
     <div className="grid">
       <div className="page-header">
         <div className="split">
-          <div><h1>Project Tracking</h1><p className="muted">{rows.length} projects in portfolio</p></div>
+          <div><h1>Projects</h1><p className="muted">{rows.length} active projects</p></div>
           <div className="toolbar">
             <Link href="/projects/archived"><button className="small">Archived</button></Link>
             <Link href="/projects/new"><button className="primary">+ New Project</button></Link>
