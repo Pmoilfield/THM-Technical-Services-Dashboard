@@ -18,7 +18,18 @@ export default function ConfirmPage() {
       const type = params.get('type')
       const code = params.get('code')
 
-      // token_hash flow (invite + recovery via email template)
+      // PKCE-prefixed token_hash → exchangeCodeForSession (PKCE flow from @supabase/ssr)
+      if (token_hash && token_hash.startsWith('pkce_')) {
+        const { error } = await supabase.auth.exchangeCodeForSession(token_hash)
+        if (error) {
+          router.replace(`/login?step=pkce_failed&err=${encodeURIComponent(error.message)}`)
+        } else {
+          router.replace('/auth/set-password')
+        }
+        return
+      }
+
+      // Standard token_hash flow (non-PKCE)
       if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({ token_hash, type })
         if (error) {
@@ -29,7 +40,7 @@ export default function ConfirmPage() {
         return
       }
 
-      // PKCE code flow
+      // PKCE code flow (code in query param)
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
