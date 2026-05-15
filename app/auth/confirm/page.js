@@ -3,16 +3,33 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 
+// Safe Links fix: this is a CLIENT page (no server handler).
+// Safe Links fetches HTML only — cannot execute JS — so tokens survive.
+// All token verification happens in JavaScript after the real browser loads.
 export default function ConfirmPage() {
   const router = useRouter()
 
   useEffect(() => {
     async function handle() {
       const supabase = createBrowserSupabase()
-
-      // PKCE flow: code in query param (Safe Links can't execute JS to consume it)
       const params = new URLSearchParams(window.location.search)
+
+      const token_hash = params.get('token_hash')
+      const type = params.get('type')
       const code = params.get('code')
+
+      // token_hash flow (invite + recovery via email template)
+      if (token_hash && type) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash, type })
+        if (error) {
+          router.replace(`/login?step=verify_failed&err=${encodeURIComponent(error.message)}`)
+        } else {
+          router.replace('/auth/set-password')
+        }
+        return
+      }
+
+      // PKCE code flow
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
@@ -23,7 +40,7 @@ export default function ConfirmPage() {
         return
       }
 
-      // Implicit flow: tokens in hash fragment
+      // Hash fragment flow (fallback)
       const hash = window.location.hash
       if (hash) {
         const hashParams = new URLSearchParams(hash.slice(1))
