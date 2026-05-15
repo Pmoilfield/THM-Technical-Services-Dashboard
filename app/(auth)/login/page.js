@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState('login') // 'login' | 'reset'
+  const [mode, setMode] = useState('login') // 'login' | 'newuser' | 'forgot'
   const [resetSent, setResetSent] = useState(false)
   const router = useRouter()
   const supabase = createBrowserSupabase()
@@ -113,14 +113,14 @@ export default function LoginPage() {
             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 type="button"
-                onClick={() => { setMode('reset'); setError('') }}
+                onClick={() => { setMode('newuser'); setError('') }}
                 style={{ width: '100%', padding: '11px', fontSize: '14px', borderRadius: '12px', border: '2px solid #c41e3a', background: 'white', color: '#c41e3a', cursor: 'pointer', fontWeight: 600 }}
               >
                 New user? Set up your account
               </button>
               <button
                 type="button"
-                onClick={() => { setMode('reset'); setError('') }}
+                onClick={() => { setMode('forgot'); setError('') }}
                 style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
               >
                 Forgot password
@@ -132,7 +132,7 @@ export default function LoginPage() {
             <div style={{ fontSize: '40px', marginBottom: '16px' }}>📧</div>
             <h3 style={{ marginBottom: '8px' }}>Check your email</h3>
             <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
-              A password reset link has been sent to <strong>{email}</strong>. Click it to set your password.
+              A link has been sent to <strong>{email}</strong>. Click it to set your password.
             </p>
             <button
               type="button"
@@ -144,9 +144,13 @@ export default function LoginPage() {
           </div>
         ) : (
           <>
-            <h3 style={{ marginBottom: '4px' }}>Set your password</h3>
+            <h3 style={{ marginBottom: '4px' }}>
+              {mode === 'newuser' ? 'Set your password' : 'Reset your password'}
+            </h3>
             <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '20px' }}>
-              Enter your email and we'll send you a link to set or reset your password.
+              {mode === 'newuser'
+                ? "Enter your email and we'll send you a link to set up your password."
+                : "Enter your email and we'll send you a password reset link."}
             </p>
             <form onSubmit={handleReset}>
               <div style={{ display: 'grid', gap: '14px' }}>
@@ -174,7 +178,7 @@ export default function LoginPage() {
                   disabled={loading}
                   style={{ width: '100%', padding: '12px', fontSize: '15px', borderRadius: '12px', marginTop: '4px' }}
                 >
-                  {loading ? 'Sending…' : 'Send reset link'}
+                  {loading ? 'Sending…' : mode === 'newuser' ? 'Set password' : 'Send reset link'}
                 </button>
               </div>
             </form>
