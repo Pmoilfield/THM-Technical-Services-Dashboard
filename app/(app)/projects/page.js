@@ -6,7 +6,7 @@ import ProjectsTable from '@/components/projects/ProjectsTable'
 export default async function ProjectsPage() {
   const supabase = await createServerSupabase()
   const [{ data: projects }, { data: tickets }, { data: pos }] = await Promise.all([
-    supabase.from('projects').select('*').neq('archived', true).order('updated_at', { ascending: false }),
+    supabase.from('projects').select('*').neq('archived', true).order('internal_job_no', { ascending: true, nullsFirst: false }),
     supabase.from('field_tickets').select('project_id, subtotal, status'),
     supabase.from('purchase_orders').select('project_id, value, markup'),
   ])
