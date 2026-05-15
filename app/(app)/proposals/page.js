@@ -176,7 +176,7 @@ export default async function BDTrackerPage() {
                         <td className="fine-print">{proj?.internal_job_no || proj?.estimate_no || '—'}</td>
                         <td className="numeric">{money(p.estimated_value)}</td>
                         <td className="fine-print">{shortDate(p.updated_at)}</td>
-                        <td style={{ position: 'relative' }}>
+                        <td>
                           <ProposalSubmittedDatePicker proposalId={p.id} currentDate={p.proposal_submitted_date} />
                         </td>
                         <td>

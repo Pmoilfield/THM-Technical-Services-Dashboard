@@ -41,7 +41,7 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
           cursor: 'pointer',
           color: currentDate ? '#111' : '#9ca3af',
           textDecoration: currentDate ? 'none' : 'underline',
-          fontSize: '14px',
+          fontSize: '13px',
         }}
       >
         {shortDate(currentDate)}
@@ -50,15 +50,27 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
   }
 
   return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        onClick={() => setOpen(false)}
+        style={{
+          background: 'none', border: 'none', padding: '0', cursor: 'pointer',
+          color: '#111', fontSize: '13px',
+        }}
+      >
+        {shortDate(currentDate || date)}
+      </button>
     <div style={{
       position: 'absolute',
+      top: '100%',
+      left: 0,
       background: '#fff',
       border: '1px solid #d1d5db',
       borderRadius: '6px',
       padding: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      zIndex: 50,
-      minWidth: '200px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      zIndex: 200,
+      minWidth: '220px',
     }}>
       <input
         type="date"
@@ -117,6 +129,7 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
           {loading ? 'Saving...' : 'Save'}
         </button>
       </div>
+    </div>
     </div>
   )
 }
