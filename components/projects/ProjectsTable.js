@@ -132,6 +132,7 @@ export default function ProjectsTable({ rows }) {
         <table>
           <thead>
             <tr>
+              <th style={{ ...thStyle, whiteSpace: 'nowrap' }}>Job #</th>
               <th style={thStyle}>Project</th>
               <th style={thStyle}>
                 <ColumnFilter label="Client" values={unique('client_name')} selected={filters.client} onChange={v => setFilter('client', v)} />
@@ -152,11 +153,16 @@ export default function ProjectsTable({ rows }) {
           <tbody>
             {filtered.length ? filtered.map(({ project, estimate, gst, accrualsToDate, remaining, spentPct }) => (
               <tr key={project.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/projects/${project.id}`)}>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: project.internal_job_no ? '#111' : '#d1d5db' }}>
+                    {project.internal_job_no || '—'}
+                  </span>
+                </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ flex: 1 }}>
                       <strong>{project.name}</strong>
-                      <div className="fine-print">{project.estimate_no || project.internal_job_no || '—'}</div>
+                      <div className="fine-print">{project.estimate_no || '—'}</div>
                     </div>
                     <button
                       onClick={e => { e.stopPropagation(); router.push(`/projects/new?template=${project.id}`) }}
@@ -184,7 +190,7 @@ export default function ProjectsTable({ rows }) {
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="9" className="empty">No projects match your filters.</td></tr>
+              <tr><td colSpan="10" className="empty">No projects match your filters.</td></tr>
             )}
           </tbody>
         </table>
