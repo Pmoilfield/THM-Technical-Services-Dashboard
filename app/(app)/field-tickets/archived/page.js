@@ -1,17 +1,16 @@
-﻿import { createServerSupabase } from '@/lib/supabase-server'
+import { createServerSupabase } from '@/lib/supabase-server'
 import { money, statusClass, formatDate } from '@/lib/calculations'
 import Link from 'next/link'
 
-export default async function FieldTicketsPage() {
+export default async function ArchivedFieldTicketsPage() {
   const supabase = await createServerSupabase()
   const { data: allTickets } = await supabase
     .from('field_tickets')
     .select('*, projects(name, archived)')
     .order('created_at', { ascending: false })
 
-  // Exclude tickets belonging to archived projects
-  const tickets = (allTickets || []).filter(t => !t.projects?.archived)
-  const archivedCount = (allTickets || []).length - tickets.length
+  // Only tickets belonging to archived projects
+  const tickets = (allTickets || []).filter(t => t.projects?.archived)
 
   const counts = { draft: 0, submitted: 0, approved: 0, rejected: 0, invoiced: 0 }
   tickets.forEach(t => { counts[t.status] = (counts[t.status] || 0) + 1 })
@@ -20,11 +19,8 @@ export default async function FieldTicketsPage() {
     <div className="grid">
       <div className="page-header">
         <div className="split">
-          <div><h1>Field Tickets</h1><p className="muted">{tickets.length} tickets</p></div>
-          <div className="toolbar">
-            <Link href="/field-tickets/archived"><button className="small">Archived{archivedCount ? ` (${archivedCount})` : ''}</button></Link>
-            <Link href="/field-tickets/new"><button className="primary">+ New Field Ticket</button></Link>
-          </div>
+          <div><h1>Archived Field Tickets</h1><p className="muted">{tickets.length} tickets from archived projects</p></div>
+          <Link href="/field-tickets"><button>Back to field tickets</button></Link>
         </div>
       </div>
 
@@ -47,17 +43,17 @@ export default async function FieldTicketsPage() {
               {tickets.length ? tickets.map(ticket => (
                 <tr key={ticket.id}>
                   <td><strong>{ticket.ticket_number}</strong></td>
-                  <td>{ticket.projects?.name || 'â€"'}</td>
+                  <td>{ticket.projects?.name || '—'}</td>
                   <td>{formatDate(ticket.date)}</td>
                   <td><span className={`status-pill ${statusClass(ticket.status)}`}>{ticket.status}</span></td>
                   <td className="numeric">{money(ticket.labour_total)}</td>
                   <td className="numeric">{money(ticket.equipment_total)}</td>
                   <td className="numeric">{money(ticket.material_total)}</td>
                   <td className="numeric"><strong>{money(ticket.subtotal)}</strong></td>
-                  <td><Link href={`/field-tickets/${ticket.id}`}><button className="small primary">Open</button></Link></td>
+                  <td><Link href={`/field-tickets/${ticket.id}`}><button className="small">Open</button></Link></td>
                 </tr>
               )) : (
-                <tr><td colSpan="9" className="empty">No field tickets yet.</td></tr>
+                <tr><td colSpan="9" className="empty">No archived field tickets.</td></tr>
               )}
             </tbody>
           </table>
@@ -66,4 +62,3 @@ export default async function FieldTicketsPage() {
     </div>
   )
 }
-
