@@ -7,7 +7,6 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/'
 
   const cookieStore = await cookies()
 
@@ -27,17 +26,14 @@ export async function GET(request) {
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
-      if (type === 'invite' || type === 'recovery') {
-        return NextResponse.redirect(`${origin}/auth/set-password`)
-      }
-      return NextResponse.redirect(`${origin}${next}`)
+      return NextResponse.redirect(`${origin}/auth/set-password`)
     }
   }
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      return NextResponse.redirect(`${origin}/auth/set-password`)
     }
   }
 
