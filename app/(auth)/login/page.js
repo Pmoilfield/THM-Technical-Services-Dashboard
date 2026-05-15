@@ -8,6 +8,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState('login') // 'login' | 'reset'
+  const [resetSent, setResetSent] = useState(false)
   const router = useRouter()
   const supabase = createBrowserSupabase()
 
@@ -22,6 +24,21 @@ export default function LoginPage() {
     } else {
       router.push('/dashboard')
       router.refresh()
+    }
+  }
+
+  async function handleReset(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/api/auth/callback?type=recovery`,
+    })
+    setLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      setResetSent(true)
     }
   }
 
@@ -50,50 +67,125 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin}>
-          <div style={{ display: 'grid', gap: '14px' }}>
-            <label>
-              Email address
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@thmtsgroup.com"
-                required
-                autoFocus
-              />
-            </label>
-            <label>
-              Password
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </label>
+        {mode === 'login' ? (
+          <>
+            <form onSubmit={handleLogin}>
+              <div style={{ display: 'grid', gap: '14px' }}>
+                <label>
+                  Email address
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@thmtsgroup.com"
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Password
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </label>
 
-            {error && (
-              <div className="notice danger" style={{ textAlign: 'center' }}>
-                {error}
+                {error && (
+                  <div className="notice danger" style={{ textAlign: 'center' }}>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={loading}
+                  style={{ width: '100%', padding: '12px', fontSize: '15px', borderRadius: '12px', marginTop: '4px' }}
+                >
+                  {loading ? 'Signing in…' : 'Sign in'}
+                </button>
               </div>
-            )}
+            </form>
 
+            <div style={{ textAlign: 'center', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => { setMode('reset'); setError('') }}
+                style={{ background: 'none', border: 'none', color: '#c41e3a', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+              >
+                Forgot password / Set your password
+              </button>
+              <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
+                No account? Contact your administrator to get access.
+              </p>
+            </div>
+          </>
+        ) : resetSent ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📧</div>
+            <h3 style={{ marginBottom: '8px' }}>Check your email</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
+              A password reset link has been sent to <strong>{email}</strong>. Click it to set your password.
+            </p>
             <button
-              type="submit"
-              className="primary"
-              disabled={loading}
-              style={{ width: '100%', padding: '12px', fontSize: '15px', borderRadius: '12px', marginTop: '4px' }}
+              type="button"
+              onClick={() => { setMode('login'); setResetSent(false); setEmail('') }}
+              style={{ background: 'none', border: 'none', color: '#c41e3a', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              Back to sign in
             </button>
           </div>
-        </form>
+        ) : (
+          <>
+            <h3 style={{ marginBottom: '4px' }}>Set your password</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '20px' }}>
+              Enter your email and we'll send you a link to set or reset your password.
+            </p>
+            <form onSubmit={handleReset}>
+              <div style={{ display: 'grid', gap: '14px' }}>
+                <label>
+                  Email address
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@thmtsgroup.com"
+                    required
+                    autoFocus
+                  />
+                </label>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--muted)' }}>
-          No account? Contact your administrator to get access.
-        </p>
+                {error && (
+                  <div className="notice danger" style={{ textAlign: 'center' }}>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={loading}
+                  style={{ width: '100%', padding: '12px', fontSize: '15px', borderRadius: '12px', marginTop: '4px' }}
+                >
+                  {loading ? 'Sending…' : 'Send reset link'}
+                </button>
+              </div>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setError('') }}
+                style={{ background: 'none', border: 'none', color: '#c41e3a', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Back to sign in
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
