@@ -9,17 +9,17 @@ export async function GET(request) {
     const type = searchParams.get('type')
 
     if (!token_hash && !code) {
-      return NextResponse.redirect(`${origin}/login?step=no_params&search=${encodeURIComponent(request.url)}`)
+      return NextResponse.redirect(`${origin}/login?step=no_params`)
     }
 
     const supabase = await createServerSupabase()
 
     if (token_hash && type) {
-      const { data, error } = await supabase.auth.verifyOtp({ token_hash, type })
+      const { error } = await supabase.auth.verifyOtp({ token_hash, type })
       if (error) {
         return NextResponse.redirect(`${origin}/login?step=verify_failed&err=${encodeURIComponent(error.message)}`)
       }
-      return NextResponse.redirect(`${origin}/auth/set-password?step=verified`)
+      return NextResponse.redirect(`${origin}/auth/set-password`)
     }
 
     if (code) {
@@ -27,7 +27,7 @@ export async function GET(request) {
       if (error) {
         return NextResponse.redirect(`${origin}/login?step=exchange_failed&err=${encodeURIComponent(error.message)}`)
       }
-      return NextResponse.redirect(`${origin}/auth/set-password?step=exchanged`)
+      return NextResponse.redirect(`${origin}/auth/set-password`)
     }
   } catch (e) {
     const { origin } = new URL(request.url)
