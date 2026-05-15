@@ -1,31 +1,49 @@
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createBrowserSupabase } from '@/lib/supabase'
 
-// This page handles Supabase auth redirects that arrive with tokens in the URL hash.
-// Microsoft Safe Links cannot intercept hash fragments, so the token survives.
 export default function ConfirmPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const hash = window.location.hash
-    if (!hash) {
-      router.replace('/login?step=no_hash')
-      return
+    async function handle() {
+      const supabase = createBrowserSupabase()
+
+      // PKCE flow: code in query param (Safe Links can't execute JS to consume it)
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          router.replace(`/login?step=exchange_failed&err=${encodeURIComponent(error.message)}`)
+        } else {
+          router.replace('/auth/set-password')
+        }
+        return
+      }
+
+      // Implicit flow: tokens in hash fragment
+      const hash = window.location.hash
+      if (hash) {
+        const hashParams = new URLSearchParams(hash.slice(1))
+        const error = hashParams.get('error')
+        if (error) {
+          router.replace(`/login?step=hash_error&err=${encodeURIComponent(hashParams.get('error_description') || error)}`)
+          return
+        }
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          router.replace('/auth/set-password')
+          return
+        }
+      }
+
+      router.replace('/login?step=no_params')
     }
-
-    const params = new URLSearchParams(hash.slice(1))
-    const error = params.get('error')
-    const errorDesc = params.get('error_description')
-
-    if (error) {
-      router.replace(`/login?step=hash_error&err=${encodeURIComponent(errorDesc || error)}`)
-      return
-    }
-
-    // Valid session tokens in hash — Supabase client will pick these up automatically.
-    // Just redirect to set-password; the browser supabase client will hydrate the session.
-    router.replace('/auth/set-password')
+    handle()
   }, [router])
 
   return (
