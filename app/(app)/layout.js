@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabase } from '@/lib/supabase-server'
 import Sidebar from '@/components/layout/Sidebar'
+import LayoutShell from '@/components/layout/LayoutShell'
 
 export default async function AppLayout({ children }) {
   const supabase = await createServerSupabase()
@@ -15,12 +16,8 @@ export default async function AppLayout({ children }) {
     .single()
 
   return (
-    <div className="app-shell">
-      <Sidebar user={session.user} profile={profile} />
-      <main className="main-content">
-        {children}
-      </main>
-    </div>
+    <LayoutShell sidebar={<Sidebar user={session.user} profile={profile} />}>
+      {children}
+    </LayoutShell>
   )
 }
-
