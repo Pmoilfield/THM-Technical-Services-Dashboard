@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { createBrowserSupabase } from '@/lib/supabase'
+import { createBrowserSupabase, createEmailSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
@@ -31,7 +31,10 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Use implicit-flow client so the email token isn't pkce_-prefixed.
+    // That makes the link verifiable on any device/browser the user opens it on.
+    const emailClient = createEmailSupabase()
+    const { error } = await emailClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/confirm`,
     })
     setLoading(false)
