@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserSupabase } from '@/lib/supabase'
+import { createBrowserSupabase, createEmailSupabase } from '@/lib/supabase'
 
 // Safe Links fix: this is a CLIENT page (no server handler).
 // Safe Links fetches HTML only — cannot execute JS — so tokens survive.
@@ -12,6 +12,8 @@ export default function ConfirmPage() {
   useEffect(() => {
     async function handle() {
       const supabase = createBrowserSupabase()
+      // Implicit-flow client for OTP verification (no code_verifier needed).
+      const implicit = createEmailSupabase()
       const params = new URLSearchParams(window.location.search)
 
       const token_hash = params.get('token_hash')
@@ -29,14 +31,22 @@ export default function ConfirmPage() {
         return
       }
 
-      // Standard token_hash flow (non-PKCE)
+      // Standard token_hash flow (non-PKCE) — verify with implicit client
       if (token_hash && type) {
-        const { error } = await supabase.auth.verifyOtp({ token_hash, type })
+        const { data, error } = await implicit.auth.verifyOtp({ token_hash, type })
         if (error) {
           router.replace(`/login?step=verify_failed&err=${encodeURIComponent(error.message)}`)
-        } else {
-          router.replace('/auth/set-password')
+          return
         }
+        // Move the session onto the persistent (PKCE) browser client so
+        // /auth/set-password can call updateUser as the authenticated user.
+        if (data?.session) {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          })
+        }
+        router.replace('/auth/set-password')
         return
       }
 
