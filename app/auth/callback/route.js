@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabase } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
@@ -8,26 +7,14 @@ export async function GET(request) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
 
-  const cookieStore = await cookies()
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    }
-  )
+  const supabase = await createServerSupabase()
 
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
       return NextResponse.redirect(`${origin}/auth/set-password`)
     }
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
   }
 
   if (code) {
@@ -35,7 +22,8 @@ export async function GET(request) {
     if (!error) {
       return NextResponse.redirect(`${origin}/auth/set-password`)
     }
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_error`)
+  return NextResponse.redirect(`${origin}/login?error=missing_token`)
 }
