@@ -1,8 +1,15 @@
 'use server'
-import { createAdminSupabase } from '@/lib/supabase-server'
+import { createAdminSupabase, createServerSupabase } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function deleteProject(projectId) {
+  // Verify caller is an admin
+  const auth = await createServerSupabase()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const { data: profile } = await auth.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') return { error: 'Only admins can delete projects' }
+
   const supabase = createAdminSupabase()
 
   // Get section IDs

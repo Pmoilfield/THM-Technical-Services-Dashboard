@@ -1,8 +1,16 @@
 'use server'
-import { createAdminSupabase } from '@/lib/supabase-server'
+import { createAdminSupabase, createServerSupabase } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function saveEstimate(projectId, sections, grandTotal, gstAmount) {
+  // Verify caller is authenticated (pm, billing, or admin can edit estimates)
+  const auth = await createServerSupabase()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const { data: profile } = await auth.from('profiles').select('role').eq('id', user.id).single()
+  const allowed = ['admin', 'pm', 'billing']
+  if (!allowed.includes(profile?.role)) return { error: 'You do not have permission to edit estimates' }
+
   const supabase = createAdminSupabase()
 
   for (const [sectionIdx, section] of sections.entries()) {
