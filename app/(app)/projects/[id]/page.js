@@ -28,6 +28,7 @@ export default async function ProjectPage({ params }) {
     { data: invoices },
     { data: proposal },
   ] = await Promise.all([
+
     sectionIds.length ? supabase.from('estimate_items').select('*').in('section_id', sectionIds).order('sort_order') : Promise.resolve({ data: [] }),
     supabase.from('field_tickets').select('*').eq('project_id', id).order('date', { ascending: false }),
     supabase.from('purchase_orders').select('*').eq('project_id', id).order('date', { ascending: false }),
@@ -65,6 +66,7 @@ export default async function ProjectPage({ params }) {
             <DeleteProjectButton projectId={id} projectName={project.name} />
             <SendToProposalsButton projectId={id} projectName={project.name} clientName={project.client_name} estimatedValue={project.estimate_subtotal} hasProposal={!!proposal} />
             <Link href={`/projects/${id}/pos/new`}><button style={{ borderRadius: '8px' }}>+ PO</button></Link>
+            <Link href={`/projects/${id}/dispatch`}><button style={{ borderRadius: '8px' }}>Dispatch</button></Link>
             <Link href={`/field-tickets/new?project=${id}`}><button className="primary" style={{ borderRadius: '24px' }}>+ Field Ticket</button></Link>
           </div>
         </div>
@@ -198,6 +200,7 @@ export default async function ProjectPage({ params }) {
           </div>
         </section>
       )}
+
     </div>
   )
 }
