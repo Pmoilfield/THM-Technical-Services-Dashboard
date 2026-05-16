@@ -62,6 +62,7 @@ export default async function ProjectPage({ params }) {
           <div className="toolbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
             <Link href={`/projects/${id}/edit`}><button>Edit</button></Link>
+            <Link href={`/projects/new?template=${id}`}><button title="Create a new project using this as a template">Use as Template</button></Link>
             <ArchiveButton projectId={id} archived={project.archived} />
             <DeleteProjectButton projectId={id} projectName={project.name} />
             <SendToProposalsButton projectId={id} projectName={project.name} clientName={project.client_name} estimatedValue={project.estimate_subtotal} hasProposal={!!proposal} />

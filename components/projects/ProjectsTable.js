@@ -159,19 +159,9 @@ export default function ProjectsTable({ rows }) {
                   </span>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ flex: 1 }}>
-                      <strong>{project.name}</strong>
-                      <div className="fine-print">{project.estimate_no || '—'}</div>
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); router.push(`/projects/new?template=${project.id}`) }}
-                      style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}
-                      className="small"
-                      title="Use as template"
-                    >
-                      Template
-                    </button>
+                  <div>
+                    <strong>{project.name}</strong>
+                    <div className="fine-print">{project.estimate_no || '—'}</div>
                   </div>
                 </td>
                 <td>{project.client_name || '—'}</td>
