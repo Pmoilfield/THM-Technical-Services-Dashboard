@@ -88,7 +88,7 @@ function ticketStatus(expiry_date) {
   return { label: 'Valid', color: '#16a34a', bg: '#f0fdf4' }
 }
 
-export default function EmployeeForm({ worker, rates, initialTickets = [], initialOrientations = [] }) {
+export default function EmployeeForm({ worker, rates, initialTickets = [], initialOrientations = [], initialHolidays = [] }) {
   const router = useRouter()
   const supabase = createBrowserSupabase()
   const [saving, setSaving] = useState(false)
@@ -137,6 +137,17 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
   }
   function updateOrientation(key, field, value) {
     setOrientations(prev => prev.map(o => o._key === key ? { ...o, [field]: value } : o))
+  }
+
+  const [holidays, setHolidays] = useState(
+    initialHolidays.map(h => ({ ...h, _key: h.id }))
+  )
+  function addHoliday() {
+    setHolidays(prev => [...prev, { _key: Math.random(), start_date: '', end_date: '', description: '' }])
+  }
+  function removeHoliday(key) { setHolidays(prev => prev.filter(h => h._key !== key)) }
+  function updateHoliday(key, field, value) {
+    setHolidays(prev => prev.map(h => h._key === key ? { ...h, [field]: value } : h))
   }
 
   const [fileModal, setFileModal] = useState(null) // ticket _key
@@ -243,6 +254,21 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
         }))
       )
       if (orientErr) { setError(orientErr.message); setSaving(false); return }
+    }
+
+    // Save holidays — delete all then reinsert
+    await supabase.from('worker_holidays').delete().eq('worker_id', worker.id)
+    const validHolidays = holidays.filter(h => h.start_date && h.end_date)
+    if (validHolidays.length) {
+      const { error: holErr } = await supabase.from('worker_holidays').insert(
+        validHolidays.map(h => ({
+          worker_id:   worker.id,
+          start_date:  h.start_date,
+          end_date:    h.end_date,
+          description: h.description || null,
+        }))
+      )
+      if (holErr) { setError(holErr.message); setSaving(false); return }
     }
 
     router.push('/employees')
@@ -528,6 +554,60 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
                   </div>
                 )
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Scheduled time off / holidays */}
+        <section className="panel">
+          <div className="split" style={{ marginBottom: '16px' }}>
+            <div>
+              <h2>Scheduled Time Off</h2>
+              <p className="muted" style={{ fontSize: '12px', marginTop: '2px' }}>Holidays and unavailable dates — shown on the schedule Gantt and blocks dispatch assignments.</p>
+            </div>
+            <button type="button" className="small primary" onClick={addHoliday}>+ Add Time Off</button>
+          </div>
+
+          {holidays.length === 0 && (
+            <p className="muted" style={{ fontSize: '13px' }}>No time off recorded.</p>
+          )}
+
+          {holidays.length > 0 && (
+            <div style={{ display: 'grid', gap: '2px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '140px 140px 1fr 32px', gap: '8px', padding: '4px 0 8px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', borderBottom: '2px solid var(--line)' }}>
+                <span>Start Date</span>
+                <span>End Date</span>
+                <span>Description</span>
+                <span />
+              </div>
+              {holidays.map(h => (
+                <div key={h._key} style={{ display: 'grid', gridTemplateColumns: '140px 140px 1fr 32px', gap: '8px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                  <input
+                    type="date"
+                    value={h.start_date || ''}
+                    onChange={e => updateHoliday(h._key, 'start_date', e.target.value)}
+                    style={{ fontSize: '13px', padding: '4px 8px' }}
+                  />
+                  <input
+                    type="date"
+                    value={h.end_date || ''}
+                    min={h.start_date || ''}
+                    onChange={e => updateHoliday(h._key, 'end_date', e.target.value)}
+                    style={{ fontSize: '13px', padding: '4px 8px' }}
+                  />
+                  <input
+                    value={h.description || ''}
+                    onChange={e => updateHoliday(h._key, 'description', e.target.value)}
+                    placeholder="e.g. Summer vacation, Medical leave…"
+                    style={{ fontSize: '13px', padding: '4px 8px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeHoliday(h._key)}
+                    style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '16px', cursor: 'pointer', padding: '2px 4px' }}
+                  >×</button>
+                </div>
+              ))}
             </div>
           )}
         </section>
