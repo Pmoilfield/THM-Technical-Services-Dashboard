@@ -67,7 +67,7 @@ export default function SetPasswordPage() {
             />
           </label>
 
-          {error && <div style={{ color: '#dc2626', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
+          {error && <div style={{ color: '#374151', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
 
           <button type="submit" className="primary" disabled={saving} style={{ marginTop: '8px' }}>
             {saving ? 'Setting password...' : 'Set password & sign in'}

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THM Manpower Scheduler – Preview</title>
+  <style>
+    :root {
+      --brand: #b91c1c;
+      --brand-light: #fee2e2;
+      --brand-dark: #991b1b;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --line: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --green: #166534;
+      --green-bg: #dcfce7;
+      --amber: #92400e;
+      --amber-bg: #fef3c7;
+      --blue: #1e40af;
+      --blue-bg: #dbeafe;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+    .shell { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; min-width: 220px; background: #fff;
+      border-right: 1px solid var(--line);
+      display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .sidebar-logo { padding: 14px 14px 10px; }
+    .sidebar-logo .wordmark { font-size: 17px; font-weight: 800; color: var(--brand); }
+    nav { padding: 8px 10px; flex: 1; }
+    .nav-item {
+      display: block; padding: 9px 12px; border-radius: 10px;
+      margin-bottom: 2px; color: #374151; font-size: 13.5px;
+      cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item.active { background: var(--brand); color: #fff; font-weight: 700; }
+    .nav-item:hover:not(.active) { background: #f3f4f6; }
+
+    /* Main */
+    .main { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+    /* Page header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; }
+    .page-header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .page-header .sub { color: var(--muted); font-size: 12px; margin-top: 1px; }
+    .btn-primary {
+      background: var(--brand); color: white; border: none;
+      padding: 7px 14px; border-radius: 8px; font-size: 13px;
+      font-weight: 700; cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-ghost {
+      background: #f3f4f6; color: var(--text); border: 1px solid var(--line);
+      padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Compact summary strip */
+    .summary-strip {
+      display: flex; gap: 10px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 10px 16px;
+      box-shadow: var(--shadow);
+    }
+    .stat { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .stat + .stat { border-left: 1px solid var(--line); padding-left: 10px; }
+    .stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+    .stat .val { font-size: 22px; font-weight: 800; line-height: 1; margin-top: 2px; }
+    .stat.warn .val { color: #d97706; }
+    .stat.danger .val { color: var(--brand); }
+    .stat.good .val { color: #16a34a; }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 10px 12px;
+      display: flex; gap: 8px; align-items: center;
+      box-shadow: var(--shadow);
+    }
+    .toolbar input, .toolbar select {
+      padding: 6px 10px; border: 1px solid var(--line);
+      border-radius: 8px; font-size: 13px; color: var(--text); background: #fff; outline: none;
+    }
+    .toolbar input { flex: 1; min-width: 0; }
+    .toolbar select { min-width: 130px; }
+    .toolbar button {
+      padding: 6px 12px; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--line);
+      background: #f3f4f6; color: var(--text);
+    }
+
+    /* Panel */
+    .panel {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+    }
+    .panel-head {
+      padding: 11px 16px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-head h2 { font-size: 14px; font-weight: 700; }
+    .count-badge {
+      background: #f3f4f6; border-radius: 99px;
+      padding: 2px 10px; font-size: 11px; font-weight: 600; color: var(--muted);
+    }
+
+    /* Gantt */
+    .gantt-outer { overflow-x: auto; }
+
+    /* Month axis */
+    .gantt-axis {
+      display: grid; grid-template-columns: 300px 1fr;
+      padding: 0 14px; border-bottom: 1px solid var(--line);
+      background: #f8fafc; min-height: 26px;
+    }
+    .axis-left { padding: 5px 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; }
+    .axis-right { position: relative; min-width: 680px; }
+    .month-mark {
+      position: absolute; top: 0; bottom: 0;
+      display: flex; align-items: center;
+    }
+    .month-mark-line { width: 1px; height: 100%; background: var(--line); }
+    .month-mark-label { font-size: 10px; font-weight: 600; color: var(--muted); padding-left: 4px; text-transform: uppercase; white-space: nowrap; }
+
+    /* Gantt rows */
+    .gantt-body { padding: 6px 14px 10px; display: flex; flex-direction: column; gap: 2px; }
+    .gantt-row {
+      display: grid; grid-template-columns: 280px 1fr;
+      align-items: center; gap: 14px;
+      padding: 6px 8px; border-radius: 8px;
+      cursor: pointer; transition: background 0.1s;
+      border: 1px solid transparent;
+    }
+    .gantt-row:hover { background: #fef2f2; border-color: #fca5a5; }
+
+    .row-label .name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-label .meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+    .pill {
+      display: inline-flex; align-items: center; flex-shrink: 0;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+    }
+    .pill.good  { background: var(--green-bg); color: var(--green); }
+    .pill.warn  { background: var(--amber-bg); color: var(--amber); }
+    .pill.info  { background: var(--blue-bg);  color: var(--blue);  }
+    .pill.muted { background: #f3f4f6;          color: var(--muted); }
+
+    /* Timeline */
+    .timeline-col { position: relative; min-width: 680px; }
+    .timeline-track {
+      position: relative; height: 22px;
+      background: #f1f5f9; border-radius: 3px;
+      border: 1px solid var(--line); overflow: visible;
+    }
+    .today-line {
+      position: absolute; top: -3px; bottom: -3px; width: 2px;
+      background: var(--brand); z-index: 10; border-radius: 2px; pointer-events: none;
+    }
+    .today-tip {
+      position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+      font-size: 9px; font-weight: 800; color: var(--brand); white-space: nowrap;
+    }
+    .bar {
+      position: absolute; top: 3px; height: 14px;
+      border-radius: 3px; z-index: 1; min-width: 4px;
+    }
+    .bar.blue  { background: linear-gradient(90deg, #2563eb, #1d4ed8); }
+    .bar.amber { background: linear-gradient(90deg, #d97706, #b45309); }
+    .bar.green { background: linear-gradient(90deg, #16a34a, #15803d); }
+    .bar.grey  { background: linear-gradient(90deg, #9ca3af, #6b7280); }
+
+    /* ── Project detail page ── */
+    .detail-page { display: none; flex-direction: column; gap: 16px; }
+    .detail-page.visible { display: flex; }
+
+    .detail-header {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 14px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: var(--shadow);
+    }
+    .detail-header h2 { font-size: 16px; font-weight: 800; }
+    .detail-header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .section { border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+    .section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 10px; }
+    .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kv-item { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+    .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+    .v { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+    .dtable { width: 100%; border-collapse: collapse; }
+    .dtable th {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); font-weight: 700; padding: 7px 10px;
+      border-bottom: 2px solid var(--line); text-align: left; background: #f8fafc;
+    }
+    .dtable td { padding: 9px 10px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    .dtable tr:last-child td { border-bottom: none; }
+
+    .trade-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .trade-Electrical      { background: #dbeafe; color: #1e40af; }
+    .trade-Instrumentation { background: #f3e8ff; color: #6d28d9; }
+    .trade-Mechanical      { background: #dcfce7; color: #166534; }
+
+    .worker-dd {
+      padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px;
+      font-size: 13px; color: var(--text); background: #fff; width: 100%; max-width: 230px;
+    }
+    .s-ok       { font-size: 11px; font-weight: 700; color: var(--green); }
+    .s-open     { font-size: 11px; font-weight: 600; color: var(--muted); }
+    .s-conflict { font-size: 11px; font-weight: 700; color: var(--brand); }
+
+    .save-btn-wrap { display: flex; justify-content: flex-end; gap: 8px; }
+    .notice { font-size: 12px; padding: 8px 12px; border-radius: 8px; background: var(--blue-bg); color: var(--blue); }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="wordmark">THM</div></div>
+    <nav>
+      <button class="nav-item">Dashboard</button>
+      <button class="nav-item">BD Tracker</button>
+      <button class="nav-item">Projects</button>
+      <button class="nav-item">Field Tickets</button>
+      <button class="nav-item">Purchase Orders</button>
+      <button class="nav-item">Invoices</button>
+      <button class="nav-item active">Schedule</button>
+      <button class="nav-item">Rate Schedules</button>
+      <button class="nav-item">Employees</button>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ══ SCHEDULE VIEW ══════════════════════════════════════════════════════ -->
+    <div id="scheduleView">
+
+      <!-- Header -->
+      <div class="page-header" style="margin-bottom:14px;">
+        <div>
+          <h1>Schedule</h1>
+          <div class="sub">Manpower loading · Outage planning · Dispatch</div>
+        </div>
+        <button class="btn-primary">+ Add Project Window</button>
+      </div>
+
+      <!-- Compact summary strip -->
+      <div class="summary-strip">
+        <div class="stat">
+          <div><div class="lbl">Active Projects</div><div class="val" id="cActive">—</div></div>
+        </div>
+        <div class="stat">
+          <div><div class="lbl">Active This Week</div><div class="val" id="cWeek">—</div></div>
+        </div>
+        <div class="stat good">
+          <div><div class="lbl">Required</div><div class="val" id="cRequired">—</div></div>
+        </div>
+        <div class="stat good">
+          <div><div class="lbl">Assigned</div><div class="val" id="cAssigned">—</div></div>
+        </div>
+        <div class="stat warn">
+          <div><div class="lbl">Open Slots</div><div class="val" id="cOpen">—</div></div>
+        </div>
+        <div class="stat danger">
+          <div><div class="lbl">Conflicts</div><div class="val" id="cConflicts">—</div></div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <input id="searchInput" placeholder="Search project, job #, client…" />
+        <select id="tradeFilter">
+          <option value="">All trades</option>
+          <option>Electrical</option>
+          <option>Instrumentation</option>
+          <option>Mechanical</option>
+        </select>
+        <select id="statusFilter">
+          <option value="">All staffing</option>
+          <option value="full">Fully Staffed</option>
+          <option value="short">Short</option>
+        </select>
+        <select id="windowFilter">
+          <option value="all">All dates</option>
+          <option value="30">Next 30 days</option>
+          <option value="60">Next 60 days</option>
+          <option value="90">Next 90 days</option>
+        </select>
+        <button id="clearBtn">Clear</button>
+      </div>
+
+      <!-- Full-width Gantt -->
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Manpower Loading — Click a project to open dispatch</h2>
+          <span class="count-badge" id="showingCount">6 projects</span>
+        </div>
+        <div class="gantt-outer">
+          <!-- Month axis -->
+          <div class="gantt-axis">
+            <div class="axis-left">Project</div>
+            <div class="axis-right" id="monthAxis"></div>
+          </div>
+          <!-- Rows -->
+          <div class="gantt-body" id="ganttBody"></div>
+        </div>
+      </div>
+
+    </div><!-- /scheduleView -->
+
+    <!-- ══ DETAIL / DISPATCH VIEW ════════════════════════════════════════════ -->
+    <div class="detail-page" id="detailPage">
+
+      <!-- Detail header -->
+      <div class="detail-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-ghost" id="backBtn">← Schedule</button>
+            <h2 id="detailTitle">—</h2>
+          </div>
+          <div class="sub" id="detailSub"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-ghost" id="openProjectBtn">Open Project Page →</button>
+          <button class="btn-primary" id="saveBtn">Save Assignments</button>
+        </div>
+      </div>
+
+      <!-- Project info + staffing summary -->
+      <div class="two-col" id="detailTop"></div>
+
+      <!-- Full dispatch table -->
+      <div class="panel" id="detailDispatch"></div>
+
+    </div><!-- /detailPage -->
+
+  </main>
+</div>
+
+<script>
+const TODAY = new Date('2026-05-15');
+
+const employees = [
+  { id: 1, name: 'Dean Schneider',      trade: 'Electrical' },
+  { id: 2, name: 'Travis Lee',          trade: 'Electrical' },
+  { id: 3, name: 'Parker McDougall',    trade: 'Instrumentation' },
+  { id: 4, name: 'Ryan Smith',          trade: 'Mechanical' },
+  { id: 5, name: 'Tyler Daffurn',       trade: 'Electrical' },
+  { id: 6, name: 'Matt Garbe',          trade: 'Instrumentation' },
+  { id: 7, name: 'Malcolm MacKendrick', trade: 'Mechanical' },
+  { id: 8, name: 'Jordan Kratz',        trade: 'Electrical' },
+];
+
+const projects = [
+  {
+    id:'P1', jobNo:'THM-2026-001',
+    name:'Wainwright LDAR Scrubber Vent', estimate:'E.027618', client:'TC Energy',
+    start:'2026-05-19', end:'2026-05-23', location:'Wainwright', pm:'Parker McDougall',
+    notes:'Outage support. Priority instrumentation coverage.',
+    requirements:[
+      { trade:'Electrical',      required:2, assigned:[1,5] },
+      { trade:'Instrumentation', required:1, assigned:[]    },
+    ]
+  },
+  {
+    id:'P2', jobNo:'THM-2026-004',
+    name:'NGTL Leismer Fuel Gas Upgrades', estimate:'E.037094', client:'TC Energy',
+    start:'2026-06-03', end:'2026-06-06', location:'Leismer', pm:'Dean Schneider',
+    notes:'Short outage. One electrical lead + one instrumentation tech.',
+    requirements:[
+      { trade:'Electrical',      required:1, assigned:[2] },
+      { trade:'Instrumentation', required:1, assigned:[3] },
+    ]
+  },
+  {
+    id:'P3', jobNo:'THM-2026-007',
+    name:'Schrader Creek A1 Hot Recycle', estimate:'E.033528', client:'TC Energy',
+    start:'2026-07-10', end:'2026-07-29', location:'Schrader Creek', pm:'Dean Schneider',
+    notes:'Longer outage. Mechanical coverage required for full window.',
+    requirements:[
+      { trade:'Mechanical', required:2, assigned:[4]  },
+      { trade:'Electrical', required:1, assigned:[]   },
+    ]
+  },
+  {
+    id:'P4', jobNo:'THM-2026-012',
+    name:'Clearwater C7 Fan Upgrade', estimate:'TBD', client:'TC Energy',
+    start:'2026-07-20', end:'2026-09-05', location:'Clearwater', pm:'Parker McDougall',
+    notes:'Planning/award stage. Good candidate for early manpower loading.',
+    requirements:[
+      { trade:'Electrical', required:2, assigned:[]  },
+      { trade:'Mechanical', required:1, assigned:[7] },
+    ]
+  },
+  {
+    id:'P5', jobNo:'THM-2026-018',
+    name:'Beiseker B3 Booster Installation', estimate:'E.037033', client:'TC Energy',
+    start:'2026-08-24', end:'2026-08-28', location:'Beiseker', pm:'Travis Lee',
+    notes:'Confirm estimate # before locking final plan.',
+    requirements:[
+      { trade:'Electrical',      required:1, assigned:[2] },
+      { trade:'Instrumentation', required:1, assigned:[]  },
+    ]
+  },
+  {
+    id:'P6', jobNo:'THM-2026-022',
+    name:'Turner Valley Fan Upgrades', estimate:'TBD', client:'TC Energy',
+    start:'2026-10-12', end:'2026-10-30', location:'Turner Valley', pm:'Dean Schneider',
+    notes:'Needs final labour loading plan.',
+    requirements:[
+      { trade:'Mechanical', required:1, assigned:[4] },
+      { trade:'Electrical', required:2, assigned:[1] },
+    ]
+  },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const ms   = d => new Date(d).getTime();
+const fmt  = d => new Date(d).toLocaleDateString('en-CA', { month:'short', day:'numeric' });
+const fmtL = d => new Date(d).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' });
+const overlaps = (aS,aE,bS,bE) => !(new Date(aE)<new Date(bS)||new Date(bE)<new Date(aS));
+const allAssigned = p => p.requirements.flatMap(r=>r.assigned);
+
+function stats(p) {
+  const req  = p.requirements.reduce((s,r)=>s+r.required, 0);
+  const asgn = p.requirements.reduce((s,r)=>s+r.assigned.filter(Boolean).length, 0);
+  return { req, asgn, open: Math.max(req-asgn,0) };
+}
+function hasConflict(empId, projId, start, end) {
+  return projects.some(p => p.id!==projId && overlaps(start,end,p.start,p.end) && allAssigned(p).includes(empId));
+}
+function projConflict(p) {
+  return allAssigned(p).some(id => hasConflict(id, p.id, p.start, p.end));
+}
+
+// Date span
+const SPAN_START = Math.min(...projects.map(p=>ms(p.start)));
+const SPAN_END   = Math.max(...projects.map(p=>ms(p.end)));
+const SPAN_MS    = SPAN_END - SPAN_START;
+const pct  = d  => ((ms(d)-SPAN_START)/SPAN_MS)*100;
+const pctW = (s,e)=>((ms(e)-ms(s))/SPAN_MS)*100;
+
+// ── State ────────────────────────────────────────────────────────────────────
+const state = { search:'', trade:'', status:'', window:'all' };
+
+// ── Cards ────────────────────────────────────────────────────────────────────
+function refreshCards() {
+  const weekEnd = new Date(TODAY.getTime()+7*86400000);
+  let cW=0,cR=0,cA=0,cO=0,cC=0;
+  projects.forEach(p => {
+    if (overlaps(p.start,p.end,TODAY.toISOString().slice(0,10),weekEnd.toISOString().slice(0,10))) cW++;
+    const s=stats(p); cR+=s.req; cA+=s.asgn; cO+=s.open;
+    if (projConflict(p)) cC++;
+  });
+  document.getElementById('cActive').textContent    = projects.length;
+  document.getElementById('cWeek').textContent      = cW;
+  document.getElementById('cRequired').textContent  = cR;
+  document.getElementById('cAssigned').textContent  = cA;
+  document.getElementById('cOpen').textContent      = cO;
+  document.getElementById('cConflicts').textContent = cC;
+}
+
+// ── Month axis ───────────────────────────────────────────────────────────────
+function buildAxis() {
+  const ax = document.getElementById('monthAxis');
+  ax.innerHTML = '';
+  let d = new Date(new Date(SPAN_START).getFullYear(), new Date(SPAN_START).getMonth(), 1);
+  const end = new Date(SPAN_END);
+  while (d <= end) {
+    const p = pct(d);
+    if (p >= 0 && p <= 102) {
+      const wrap = document.createElement('div');
+      wrap.className = 'month-mark';
+      wrap.style.left = p + '%';
+      wrap.innerHTML = `<div class="month-mark-line"></div><div class="month-mark-label">${d.toLocaleDateString('en-CA',{month:'short',year:'2-digit'})}</div>`;
+      ax.appendChild(wrap);
+    }
+    d = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  }
+}
+
+// ── Filter ───────────────────────────────────────────────────────────────────
+function filtered() {
+  const now = TODAY;
+  return projects.filter(p => {
+    const s = stats(p);
+    const q = `${p.name} ${p.client} ${p.estimate} ${p.jobNo}`.toLowerCase();
+    if (state.search && !q.includes(state.search)) return false;
+    if (state.trade && !p.requirements.some(r=>r.trade===state.trade)) return false;
+    if (state.status==='full' && s.open>0) return false;
+    if (state.status==='short' && s.open===0) return false;
+    if (state.window!=='all') {
+      const cutoff = new Date(now.getTime()+Number(state.window)*86400000);
+      if (new Date(p.start)>cutoff) return false;
+    }
+    return true;
+  }).sort((a,b)=>ms(a.start)-ms(b.start));
+}
+
+// Sample holiday data (from worker_holidays table in real app)
+const holidays = [
+  { worker_id: 1, name: 'Dean Schneider',   start: '2026-06-16', end: '2026-06-26', description: 'Vacation' },
+  { worker_id: 3, name: 'Parker McDougall', start: '2026-07-01', end: '2026-07-04', description: 'Canada Day' },
+  { worker_id: 4, name: 'Ryan Smith',       start: '2026-08-01', end: '2026-08-14', description: 'Summer vacation' },
+  { worker_id: 5, name: 'Tyler Daffurn',    start: '2026-09-01', end: '2026-09-07', description: 'Medical leave' },
+]
+
+// ── Gantt ────────────────────────────────────────────────────────────────────
+function renderGantt() {
+  const body = document.getElementById('ganttBody');
+  body.innerHTML = '';
+  const list = filtered();
+  document.getElementById('showingCount').textContent = `${list.length} project${list.length!==1?'s':''}`;
+
+  list.forEach(p => {
+    const s = stats(p);
+    const conflict = projConflict(p);
+    const barClass = conflict ? 'amber' : s.open===0 ? 'green' : 'blue';
+    const barLabel = s.asgn || s.req ? `${fmt(p.start)} – ${fmt(p.end)}  ·  ${s.asgn}/${s.req}` : '';
+
+    const row = document.createElement('div');
+    row.className = 'gantt-row';
+    row.title = 'Click to open dispatch';
+    row.innerHTML = `
+      <div class="row-label">
+        <div class="name">${p.name}</div>
+        <div class="meta">
+          <span>${p.jobNo}</span>
+          ${conflict
+            ? '<span class="pill warn">⚠ Conflict</span>'
+            : s.open===0
+              ? '<span class="pill good">✓ Staffed</span>'
+              : `<span class="pill warn">${s.open} open</span>`}
+        </div>
+      </div>
+      <div class="timeline-col">
+        <div class="timeline-track">
+          <div class="today-line" style="left:${pct(TODAY)}%">
+            <div class="today-tip">Today</div>
+          </div>
+          <div class="bar ${barClass}" style="left:${pct(p.start)}%;width:${Math.max(pctW(p.start,p.end),3.5)}%"></div>
+        </div>
+      </div>
+    `;
+    row.addEventListener('click', () => openDetail(p.id));
+    body.appendChild(row);
+  });
+
+  // ── Holidays section ──────────────────────────────────────────────────────
+  if (holidays.length) {
+    // Divider label
+    const divider = document.createElement('div');
+    divider.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 8px 4px;';
+    divider.innerHTML = `
+      <div style="flex:0 0 280px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Time Off / Holidays</div>
+      <div style="flex:1;height:1px;background:var(--line);min-width:680px;"></div>
+    `;
+    body.appendChild(divider);
+
+    // One row per worker who has holidays
+    const byWorker = {};
+    holidays.forEach(h => {
+      if (!byWorker[h.worker_id]) byWorker[h.worker_id] = { name: h.name, blocks: [] };
+      byWorker[h.worker_id].blocks.push(h);
+    });
+
+    Object.values(byWorker).forEach(({ name, blocks }) => {
+      const row = document.createElement('div');
+      row.className = 'gantt-row';
+      row.style.cursor = 'default';
+
+      const barsHtml = blocks.map(b => `
+        <div class="bar" style="
+          left:${pct(b.start)}%;
+          width:${Math.max(pctW(b.start,b.end),2)}%;
+          background:linear-gradient(90deg,#6b7280,#4b5563);
+          top:3px;height:14px;border-radius:3px;
+        " title="${b.description}"></div>
+      `).join('');
+
+      row.innerHTML = `
+        <div class="row-label">
+          <div class="name" style="color:var(--muted);">${name}</div>
+          <span class="pill muted">${blocks.length} period${blocks.length > 1 ? 's' : ''}</span>
+        </div>
+        <div class="timeline-col">
+          <div class="timeline-track" style="background:#f8fafc;">
+            <div class="today-line" style="left:${pct(TODAY)}%;"></div>
+            ${barsHtml}
+          </div>
+        </div>
+      `;
+      body.appendChild(row);
+    });
+  }
+}
+
+// ── Detail / Dispatch ────────────────────────────────────────────────────────
+function openDetail(projId) {
+  const p = projects.find(x=>x.id===projId);
+  document.getElementById('scheduleView').style.display = 'none';
+  document.getElementById('detailPage').classList.add('visible');
+
+  document.getElementById('detailTitle').textContent = p.name;
+  document.getElementById('detailSub').textContent   = `${p.jobNo} · ${p.client} · ${p.location}`;
+
+  // Top two-col
+  const top = document.getElementById('detailTop');
+  top.innerHTML = '';
+
+  // Project info
+  const info = document.createElement('div');
+  info.className = 'panel section';
+  info.innerHTML = `
+    <h3>Project Info</h3>
+    <div class="kv">
+      <div class="kv-item"><div class="k">Job #</div><div class="v">${p.jobNo}</div></div>
+      <div class="kv-item"><div class="k">Estimate</div><div class="v">${p.estimate}</div></div>
+      <div class="kv-item"><div class="k">Client</div><div class="v">${p.client}</div></div>
+      <div class="kv-item"><div class="k">PM</div><div class="v">${p.pm}</div></div>
+      <div class="kv-item"><div class="k">Start Date</div><div class="v">${fmtL(p.start)}</div></div>
+      <div class="kv-item"><div class="k">End Date</div><div class="v">${fmtL(p.end)}</div></div>
+      <div class="kv-item" style="grid-column:1/-1"><div class="k">Notes</div><div class="v" style="font-weight:400;font-size:12px;color:var(--muted);margin-top:4px;">${p.notes}</div></div>
+    </div>
+  `;
+  top.appendChild(info);
+
+  // Staffing summary
+  const summ = document.createElement('div');
+  summ.className = 'panel section';
+  const summRows = p.requirements.map(r => {
+    const short = Math.max(r.required - r.assigned.filter(Boolean).length, 0);
+    return `<tr>
+      <td><span class="trade-badge trade-${r.trade}">${r.trade}</span></td>
+      <td style="text-align:center;font-weight:700;">${r.required}</td>
+      <td style="text-align:center;font-weight:700;">${r.assigned.filter(Boolean).length}</td>
+      <td style="text-align:center;" class="${short>0?'s-conflict':'s-ok'}">${short>0?short+' short':'✓ Filled'}</td>
+    </tr>`;
+  }).join('');
+  summ.innerHTML = `
+    <h3>Staffing Summary</h3>
+    <table class="dtable">
+      <thead><tr>
+        <th>Trade</th>
+        <th style="text-align:center">Required</th>
+        <th style="text-align:center">Assigned</th>
+        <th style="text-align:center">Status</th>
+      </tr></thead>
+      <tbody>${summRows}</tbody>
+    </table>
+  `;
+  top.appendChild(summ);
+
+  // Dispatch table
+  const disp = document.getElementById('detailDispatch');
+  disp.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'panel-head';
+  head.innerHTML = '<h2>Dispatch — Assign Workers</h2>';
+  disp.appendChild(head);
+
+  const tblWrap = document.createElement('div');
+  tblWrap.style.padding = '0 4px 4px';
+  const tbl = document.createElement('table');
+  tbl.className = 'dtable';
+  tbl.innerHTML = `<thead><tr>
+    <th>Trade</th><th>Slot</th><th>Assigned Worker</th><th>Availability</th>
+  </tr></thead><tbody id="dispBody"></tbody>`;
+  const tbody = tbl.querySelector('tbody');
+
+  p.requirements.forEach((req, ri) => {
+    for (let slot=0; slot<req.required; slot++) {
+      const assignedId = req.assigned[slot] ?? null;
+      const conflict   = assignedId && hasConflict(assignedId, p.id, p.start, p.end);
+      const options    = employees
+        .filter(e=>e.trade===req.trade)
+        .map(e => {
+          const booked = hasConflict(e.id, p.id, p.start, p.end);
+          const sel = e.id===assignedId ? 'selected' : '';
+          const dis = booked && !sel ? 'disabled' : '';
+          return `<option value="${e.id}" ${sel} ${dis}>${e.name}${booked&&!sel?' — booked':''}</option>`;
+        }).join('');
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="trade-badge trade-${req.trade}">${req.trade}</span></td>
+        <td style="color:var(--muted);font-size:12px;">Slot ${slot+1} of ${req.required}</td>
+        <td>
+          <select class="worker-dd" data-proj="${p.id}" data-ri="${ri}" data-slot="${slot}">
+            <option value="">— Unassigned</option>
+            ${options}
+          </select>
+        </td>
+        <td>${conflict
+          ? '<span class="s-conflict">⚠ Conflict — booked on another project</span>'
+          : assignedId
+            ? '<span class="s-ok">✓ Available &amp; allocated</span>'
+            : '<span class="s-open">Awaiting assignment</span>'}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  });
+
+  tblWrap.appendChild(tbl);
+  disp.appendChild(tblWrap);
+
+  const notice = document.createElement('div');
+  notice.style.padding = '0 14px 14px';
+  notice.innerHTML = `<div class="notice">Workers shown as "booked" are already assigned to a project with overlapping dates. Selecting them here will flag a conflict.</div>`;
+  disp.appendChild(notice);
+
+  // Bind dropdowns
+  disp.querySelectorAll('.worker-dd').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const proj = projects.find(x=>x.id===e.target.dataset.proj);
+      const req  = proj.requirements[Number(e.target.dataset.ri)];
+      const slot = Number(e.target.dataset.slot);
+      req.assigned[slot] = e.target.value ? Number(e.target.value) : null;
+      req.assigned = req.assigned.filter(x=>x!=null);
+      refreshCards();
+      openDetail(proj.id);
+    });
+  });
+}
+
+function backToSchedule() {
+  document.getElementById('detailPage').classList.remove('visible');
+  document.getElementById('scheduleView').style.display = 'block';
+  renderGantt();
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e=>{state.search=e.target.value.toLowerCase();renderGantt();});
+document.getElementById('tradeFilter').addEventListener('change', e=>{state.trade=e.target.value;renderGantt();});
+document.getElementById('statusFilter').addEventListener('change', e=>{state.status=e.target.value;renderGantt();});
+document.getElementById('windowFilter').addEventListener('change', e=>{state.window=e.target.value;renderGantt();});
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  state.search='';state.trade='';state.status='';state.window='all';
+  document.getElementById('searchInput').value='';
+  document.getElementById('tradeFilter').value='';
+  document.getElementById('statusFilter').value='';
+  document.getElementById('windowFilter').value='all';
+  renderGantt();
+});
+document.getElementById('backBtn').addEventListener('click', backToSchedule);
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const btn=document.getElementById('saveBtn');
+  btn.textContent='✓ Saved'; btn.style.background='#16a34a';
+  setTimeout(()=>{btn.textContent='Save Assignments';btn.style.background='';},1800);
+});
+document.getElementById('openProjectBtn').addEventListener('click', ()=>{
+  alert('Would navigate to /projects/{id} in the real app.');
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildAxis();
+refreshCards();
+renderGantt();
+</script>
+</body>
+</html>

@@ -88,10 +88,10 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
       />
       {error && (
         <div style={{
-          color: '#dc2626',
+          color: '#374151',
           fontSize: '12px',
           marginBottom: '8px',
-          background: '#fee2e2',
+          background: '#f4f4f5',
           padding: '6px',
           borderRadius: '4px',
         }}>
@@ -119,7 +119,7 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
           style={{
             padding: '6px 12px',
             borderRadius: '4px',
-            background: date ? '#b91c1c' : '#d1d5db',
+            background: date ? '#111' : '#d1d5db',
             color: '#fff',
             border: 'none',
             cursor: date ? 'pointer' : 'not-allowed',

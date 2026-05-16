@@ -192,7 +192,7 @@ export default function TimeEntryForm({ projects, workers, recentEntries }) {
                     <td>{entry.projects?.name || '—'}</td>
                     <td className="numeric">{entry.travel_hours || '—'}</td>
                     <td className="numeric" style={{ color: '#15803d', fontWeight: 700 }}>{entry.reg_hours || '—'}</td>
-                    <td className="numeric" style={{ color: '#b91c1c', fontWeight: 700 }}>{entry.ot_hours || '—'}</td>
+                    <td className="numeric" style={{ color: '#374151', fontWeight: 700 }}>{entry.ot_hours || '—'}</td>
                     <td className="numeric" style={{ fontWeight: 800 }}>{total}</td>
                     <td style={{ color: 'var(--muted)', fontSize: '11px' }}>{entry.notes || ''}</td>
                     <td>

@@ -36,7 +36,7 @@ export default function DeleteProjectButton({ projectId, projectName }) {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h2 style={{ marginBottom: '8px', color: '#b91c1c' }}>Delete project?</h2>
+            <h2 style={{ marginBottom: '8px', color: '#111' }}>Delete project?</h2>
             <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '20px', lineHeight: 1.5 }}>
               This will permanently delete <strong>{projectName}</strong> and all associated estimate sections, line items, field tickets, purchase orders, and invoices. This cannot be undone.
             </p>
@@ -48,10 +48,10 @@ export default function DeleteProjectButton({ projectId, projectName }) {
               onChange={e => setConfirm(e.target.value)}
               placeholder={projectName}
               autoFocus
-              style={{ width: '100%', marginBottom: '16px', borderColor: confirm && !matches ? '#b91c1c' : undefined }}
+              style={{ width: '100%', marginBottom: '16px', borderColor: confirm && !matches ? '#111' : undefined }}
               onKeyDown={e => e.key === 'Enter' && matches && !loading && handleDelete()}
             />
-            {error && <p style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
+            {error && <p style={{ color: '#374151', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
               <button className="danger" onClick={handleDelete} disabled={!matches || loading}>

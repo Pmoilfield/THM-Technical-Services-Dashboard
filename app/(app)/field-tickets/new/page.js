@@ -21,7 +21,7 @@ function FileDropModal({ onFile, onClose }) {
           onDragLeave={() => setDragging(false)}
           onDrop={e => { e.preventDefault(); setDragging(false); handle(e.dataTransfer.files[0]) }}
           onClick={() => inputRef.current.click()}
-          style={{ border: `2px dashed ${dragging ? '#b91c1c' : '#d1d5db'}`, borderRadius: '12px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer', background: dragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s' }}
+          style={{ border: `2px dashed ${dragging ? '#111' : '#d1d5db'}`, borderRadius: '12px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer', background: dragging ? '#f4f4f5' : '#fafafa', transition: 'all 0.15s' }}
         >
           <div style={{ fontSize: '36px', marginBottom: '10px' }}>📎</div>
           <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>{dragging ? 'Drop to attach' : 'Drop file here or click to browse'}</div>

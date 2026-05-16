@@ -27,9 +27,9 @@ function FileDropModal({ onFile, onClose }) {
           onDrop={e => { e.preventDefault(); setDragging(false); handle(e.dataTransfer.files[0]) }}
           onClick={() => inputRef.current.click()}
           style={{
-            border: `2px dashed ${dragging ? '#b91c1c' : '#d1d5db'}`,
+            border: `2px dashed ${dragging ? '#111' : '#d1d5db'}`,
             borderRadius: '12px', padding: '40px 24px', textAlign: 'center',
-            cursor: 'pointer', background: dragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s',
+            cursor: 'pointer', background: dragging ? '#f4f4f5' : '#fafafa', transition: 'all 0.15s',
           }}
         >
           <div style={{ fontSize: '36px', marginBottom: '10px' }}>📎</div>
@@ -83,7 +83,7 @@ function ticketStatus(expiry_date) {
   today.setHours(0, 0, 0, 0)
   const exp = new Date(expiry_date + 'T00:00:00')
   const daysLeft = Math.floor((exp - today) / 86400000)
-  if (daysLeft < 0)  return { label: 'Expired',       color: '#dc2626', bg: '#fef2f2' }
+  if (daysLeft < 0)  return { label: 'Expired',       color: '#374151', bg: '#f4f4f5' }
   if (daysLeft <= 30) return { label: 'Expiring soon', color: '#d97706', bg: '#fffbeb' }
   return { label: 'Valid', color: '#16a34a', bg: '#f0fdf4' }
 }

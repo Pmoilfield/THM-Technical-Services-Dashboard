@@ -92,8 +92,8 @@ export default function QuickStatusUpdate({ projectId, currentStatus, onSuccess 
 
         {error && (
           <div style={{
-            background: '#fecaca',
-            color: '#991b1b',
+            background: '#f4f4f5',
+            color: '#374151',
             padding: '8px 12px',
             borderRadius: '4px',
             fontSize: '12px',

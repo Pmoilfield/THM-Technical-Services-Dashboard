@@ -35,7 +35,7 @@ function QuoteDropModal({ onFile, onClose }) {
           onDrop={e => { e.preventDefault(); setDragging(false); handle(e.dataTransfer.files[0]) }}
           onClick={() => inputRef.current.click()}
           style={{
-            border: `2px dashed ${dragging ? '#b91c1c' : '#d1d5db'}`,
+            border: `2px dashed ${dragging ? '#111' : '#d1d5db'}`,
             borderRadius: '12px',
             padding: '40px 24px',
             textAlign: 'center',
@@ -368,7 +368,7 @@ export default function EstimateBuilder({ project, initialSections, initialItems
                     display: 'grid', gridTemplateColumns: '20px 52px 1fr 110px 32px', gap: '8px', alignItems: 'start',
                     padding: '5px 0', borderBottom: '1px solid var(--line)',
                     opacity: isDragging ? 0.4 : 1,
-                    borderTop: isOver ? '2px solid #b91c1c' : undefined,
+                    borderTop: isOver ? '2px solid #111' : undefined,
                     transition: 'opacity 0.15s',
                   }}
                 >
@@ -488,7 +488,7 @@ export default function EstimateBuilder({ project, initialSections, initialItems
                           onDragOver={e => handleItemDragOver(e, section._key, type, itemIdx)}
                           onDrop={e => handleItemDrop(e, section._key, type, itemIdx)}
                           onDragEnd={handleItemDragEnd}
-                          style={{ borderBottom: '1px solid var(--line)', borderTop: isItemOver ? '2px solid #b91c1c' : undefined }}
+                          style={{ borderBottom: '1px solid var(--line)', borderTop: isItemOver ? '2px solid #111' : undefined }}
                         >
                           <td style={{ ...td, width: '20px', cursor: 'grab', color: '#cbd5e1', fontSize: '14px', textAlign: 'center', userSelect: 'none' }}>⠿</td>
                           {type === 'Labour' && <>

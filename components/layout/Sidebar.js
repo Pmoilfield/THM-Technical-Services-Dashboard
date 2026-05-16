@@ -58,7 +58,7 @@ export default function Sidebar({ user, profile }) {
               borderRadius: '4px',
               marginBottom: '2px',
               color: active ? '#ffffff' : '#374151',
-              background: active ? '#b91c1c' : 'transparent',
+              background: active ? '#111' : 'transparent',
               textDecoration: 'none',
               fontSize: '14px',
               fontWeight: active ? 700 : 400,

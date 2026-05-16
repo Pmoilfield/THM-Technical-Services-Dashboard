@@ -110,7 +110,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
               <tr>
                 <th style={{ ...headCell, textAlign: 'left' }}>Employee</th>
                 {week1.map((d, i) => (
-                  <th key={d} style={{ ...headCell, color: i >= 5 ? '#b91c1c' : undefined }}>
+                  <th key={d} style={{ ...headCell, color: i >= 5 ? '#374151' : undefined }}>
                     {DAY_LABELS[i]}<br />{formatHeader(d)}
                   </th>
                 ))}
@@ -135,7 +135,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
                           {total > 0 ? (
                             <div>
                               {h.st > 0 && <div style={{ color: '#15803d', fontWeight: 700 }}>{h.st}st</div>}
-                              {h.ot > 0 && <div style={{ color: '#b91c1c', fontWeight: 700 }}>{h.ot}ot</div>}
+                              {h.ot > 0 && <div style={{ color: '#374151', fontWeight: 700 }}>{h.ot}ot</div>}
                               {h.travel > 0 && <div style={{ color: '#6b7280' }}>{h.travel}tr</div>}
                             </div>
                           ) : <span style={{ color: '#d1d5db' }}>—</span>}
@@ -144,7 +144,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
                     })}
                     <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700 }}>{week1Travel || '—'}</td>
                     <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#15803d' }}>{week1ST || '—'}</td>
-                    <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#b91c1c' }}>{week1OT || '—'}</td>
+                    <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#374151' }}>{week1OT || '—'}</td>
                   </tr>
                 )
               })}
@@ -162,7 +162,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
               <tr>
                 <th style={{ ...headCell, textAlign: 'left' }}>Employee</th>
                 {week2.map((d, i) => (
-                  <th key={d} style={{ ...headCell, color: i >= 5 ? '#b91c1c' : undefined }}>
+                  <th key={d} style={{ ...headCell, color: i >= 5 ? '#374151' : undefined }}>
                     {DAY_LABELS[i]}<br />{formatHeader(d)}
                   </th>
                 ))}
@@ -187,7 +187,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
                           {total > 0 ? (
                             <div>
                               {h.st > 0 && <div style={{ color: '#15803d', fontWeight: 700 }}>{h.st}st</div>}
-                              {h.ot > 0 && <div style={{ color: '#b91c1c', fontWeight: 700 }}>{h.ot}ot</div>}
+                              {h.ot > 0 && <div style={{ color: '#374151', fontWeight: 700 }}>{h.ot}ot</div>}
                               {h.travel > 0 && <div style={{ color: '#6b7280' }}>{h.travel}tr</div>}
                             </div>
                           ) : <span style={{ color: '#d1d5db' }}>—</span>}
@@ -196,7 +196,7 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
                     })}
                     <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700 }}>{week2Travel || '—'}</td>
                     <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#15803d' }}>{week2ST || '—'}</td>
-                    <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#b91c1c' }}>{week2OT || '—'}</td>
+                    <td style={{ ...cellStyle, background: '#f8fafc', fontWeight: 700, color: '#374151' }}>{week2OT || '—'}</td>
                   </tr>
                 )
               })}
@@ -241,17 +241,17 @@ export default function PayrollCalendar({ workers, tickets, timeEntries, periodS
                 const varOT = ft.ot - te.ot
                 const varTotal = ftTotal - teTotal
                 const hasData = ftTotal > 0 || teTotal > 0
-                const varColor = v => v === 0 ? undefined : v > 0 ? '#b91c1c' : '#15803d'
+                const varColor = v => v === 0 ? undefined : v > 0 ? '#374151' : '#15803d'
                 return (
                   <tr key={w.id} style={{ opacity: hasData ? 1 : 0.35 }}>
                     <td style={nameCell}>{w.name}</td>
                     <td style={{ ...cellStyle, background: '#f0fdf4' }}>{ft.travel || '—'}</td>
                     <td style={{ ...cellStyle, background: '#f0fdf4', fontWeight: 700, color: '#15803d' }}>{ft.st || '—'}</td>
-                    <td style={{ ...cellStyle, background: '#f0fdf4', fontWeight: 700, color: '#b91c1c' }}>{ft.ot || '—'}</td>
+                    <td style={{ ...cellStyle, background: '#f0fdf4', fontWeight: 700, color: '#374151' }}>{ft.ot || '—'}</td>
                     <td style={{ ...cellStyle, background: '#f0fdf4', fontWeight: 800 }}>{ftTotal || '—'}</td>
                     <td style={{ ...cellStyle, background: '#eff8ff' }}>{te.travel || '—'}</td>
                     <td style={{ ...cellStyle, background: '#eff8ff', fontWeight: 700, color: '#15803d' }}>{te.st || '—'}</td>
-                    <td style={{ ...cellStyle, background: '#eff8ff', fontWeight: 700, color: '#b91c1c' }}>{te.ot || '—'}</td>
+                    <td style={{ ...cellStyle, background: '#eff8ff', fontWeight: 700, color: '#374151' }}>{te.ot || '—'}</td>
                     <td style={{ ...cellStyle, background: '#eff8ff', fontWeight: 800 }}>{teTotal || '—'}</td>
                     <td style={{ ...cellStyle, background: '#fefce8', fontWeight: 700, color: varColor(varST) }}>{varST === 0 ? '✓' : varST > 0 ? `+${varST}` : varST}</td>
                     <td style={{ ...cellStyle, background: '#fefce8', fontWeight: 700, color: varColor(varOT) }}>{varOT === 0 ? '✓' : varOT > 0 ? `+${varOT}` : varOT}</td>

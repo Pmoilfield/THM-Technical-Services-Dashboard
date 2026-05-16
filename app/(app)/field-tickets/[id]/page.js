@@ -72,9 +72,9 @@ export default async function FieldTicketPage({ params }) {
           </div>
           {ticket.description && <p style={{ marginTop: '12px', fontSize: '14px' }}>{ticket.description}</p>}
           {ticket.status === 'rejected' && ticket.rejection_reason && (
-            <div style={{ marginTop: '12px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px' }}>
-              <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: '4px' }}>Rejection reason</div>
-              <div style={{ color: '#7f1d1d' }}>{ticket.rejection_reason}</div>
+            <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f4f4f5', border: '1px solid #e4e4e7', borderRadius: '8px', fontSize: '13px' }}>
+              <div style={{ fontWeight: 600, color: '#111', marginBottom: '4px' }}>Rejection reason</div>
+              <div style={{ color: '#374151' }}>{ticket.rejection_reason}</div>
             </div>
           )}
         </section>

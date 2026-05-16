@@ -25,7 +25,7 @@ const TRADE_COLORS = {
   'Construction Management': { bg: '#fef3c7', color: '#92400e' },
   'Project Management':   { bg: '#fef3c7', color: '#92400e' },
   'Labourer':             { bg: '#f3f4f6', color: '#374151' },
-  'Welder':               { bg: '#fee2e2', color: '#991b1b' },
+  'Welder':               { bg: '#f4f4f5', color: '#374151' },
 }
 function tradeBadge(trade) {
   const c = TRADE_COLORS[trade] || { bg: '#f3f4f6', color: '#374151' }
@@ -180,7 +180,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
           { label: 'Active Projects',  value: summaryStats.active,   color: 'var(--text)' },
           { label: 'Active This Week', value: summaryStats.thisWeek, color: 'var(--text)' },
           { label: 'Workers Assigned', value: summaryStats.assigned, color: '#16a34a' },
-          { label: 'Conflicts',        value: summaryStats.conflicts, color: summaryStats.conflicts > 0 ? '#b91c1c' : '#16a34a' },
+          { label: 'Conflicts',        value: summaryStats.conflicts, color: summaryStats.conflicts > 0 ? '#111' : '#16a34a' },
         ].map((s, i) => (
           <div key={s.label} style={{ flex: 1, padding: '12px 20px', borderLeft: i > 0 ? '1px solid var(--line)' : 'none' }}>
             <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>{s.label}</div>
@@ -248,8 +248,8 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                   style={{
                     display: 'grid', gridTemplateColumns: '280px 1fr', alignItems: 'center',
                     gap: '14px', padding: '6px 8px', borderRadius: '8px', cursor: 'pointer',
-                    background: isSelected ? '#fef2f2' : 'transparent',
-                    border: `1px solid ${isSelected ? '#fca5a5' : 'transparent'}`,
+                    background: isSelected ? '#f4f4f5' : 'transparent',
+                    border: `1px solid ${isSelected ? '#e4e4e7' : 'transparent'}`,
                     transition: 'background 0.1s',
                   }}
                 >
@@ -269,8 +269,8 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                   {/* Bar */}
                   <div style={{ position: 'relative', minWidth: '700px' }}>
                     {/* Today line */}
-                    <div style={{ position: 'absolute', left: pct(today()) + '%', top: '-3px', bottom: '-3px', width: '2px', background: '#b91c1c', zIndex: 10, borderRadius: '2px', pointerEvents: 'none' }}>
-                      <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 800, color: '#b91c1c', whiteSpace: 'nowrap' }}>Today</div>
+                    <div style={{ position: 'absolute', left: pct(today()) + '%', top: '-3px', bottom: '-3px', width: '2px', background: '#111', zIndex: 10, borderRadius: '2px', pointerEvents: 'none' }}>
+                      <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 800, color: '#111', whiteSpace: 'nowrap' }}>Today</div>
                     </div>
                     <div style={{ position: 'relative', height: '22px', background: '#f1f5f9', borderRadius: '3px', border: '1px solid var(--line)', overflow: 'visible' }}>
                       {p.start_date && (
@@ -374,7 +374,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                       <button
                         className="small"
                         onClick={() => removeAssignment(a.id)}
-                        style={{ color: '#b91c1c', borderColor: '#fca5a5' }}
+                        style={{ color: '#111', borderColor: '#e4e4e7' }}
                       >Remove</button>
                     </div>
                   )
@@ -440,7 +440,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
         <section className="panel" style={{ padding: '40px', textAlign: 'center' }}>
           <p style={{ color: 'var(--muted)', fontSize: '14px' }}>No active projects with scheduled dates yet.</p>
           <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '8px' }}>
-            Set start and end dates on a <Link href="/projects" style={{ color: '#b91c1c' }}>project</Link> to see it here.
+            Set start and end dates on a <Link href="/projects" style={{ color: '#111' }}>project</Link> to see it here.
           </p>
         </section>
       )}

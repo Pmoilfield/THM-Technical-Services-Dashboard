@@ -70,9 +70,9 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
   function CertBadge({ cert }) {
     const expired = certExpired(cert)
     const soon    = !expired && certSoon(cert)
-    const bg    = expired ? '#fef2f2' : soon ? '#fffbeb' : '#f0f0f0'
-    const color = expired ? '#b91c1c' : soon ? '#b45309' : '#374151'
-    const border = expired ? '#fca5a5' : soon ? '#fde68a' : '#e5e7eb'
+    const bg    = expired ? '#f4f4f5' : soon ? '#fffbeb' : '#f0f0f0'
+    const color = expired ? '#111' : soon ? '#b45309' : '#374151'
+    const border = expired ? '#e4e4e7' : soon ? '#fde68a' : '#e5e7eb'
     return (
       <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '3px', background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap' }}>
         {cert.cert_type}{expired ? ' – EXPIRED' : soon ? ' – exp soon' : ''}
@@ -242,7 +242,7 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
             {/* Window header — always visible */}
             <div
               onClick={() => setExpandedWindow(isOpen ? null : win.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer', background: isOpen ? '#fef2f2' : '#fff', borderBottom: isOpen ? '1px solid var(--line)' : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer', background: isOpen ? '#f4f4f5' : '#fff', borderBottom: isOpen ? '1px solid var(--line)' : 'none' }}
             >
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '14px' }}>{win.description || 'Crew Window'}</div>
@@ -276,7 +276,7 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                     End Date
                     <input type="date" defaultValue={win.end_date} onBlur={e => updateWindowDates(win.id, 'end_date', e.target.value)} style={{ marginTop: '4px' }} />
                   </label>
-                  <button className="small" style={{ color: '#b91c1c', borderColor: '#fca5a5', marginBottom: '1px' }} onClick={() => deleteWindow(win.id)}>Delete Window</button>
+                  <button className="small" style={{ color: '#111', borderColor: '#e4e4e7', marginBottom: '1px' }} onClick={() => deleteWindow(win.id)}>Delete Window</button>
                 </div>
 
                 {/* Trade requirements — grouped */}
@@ -330,7 +330,7 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                                 {conflict && <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {conflict}</span>}
                               </div>
                             </div>
-                            <button className="small" onClick={() => removeAssignment(a.id)} style={{ color: '#b91c1c', borderColor: '#fca5a5', fontSize: '11px' }}>Remove</button>
+                            <button className="small" onClick={() => removeAssignment(a.id)} style={{ color: '#111', borderColor: '#e4e4e7', fontSize: '11px' }}>Remove</button>
                           </div>
                         )
                       })}

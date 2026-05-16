@@ -24,15 +24,15 @@ function PipelineBar({ status, submittedDate }) {
     <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
       {stages.map((s, i) => (
         <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {i > 0 && <div style={{ width: '16px', height: '2px', background: s.done ? '#b91c1c' : '#e5e7eb' }} />}
+          {i > 0 && <div style={{ width: '16px', height: '2px', background: s.done ? '#111' : '#e5e7eb' }} />}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '4px',
             fontSize: '11px', fontWeight: s.done ? 700 : 400,
-            color: s.done ? '#b91c1c' : '#9ca3af',
+            color: s.done ? '#111' : '#9ca3af',
           }}>
             <div style={{
               width: '8px', height: '8px', borderRadius: '50%',
-              background: s.done ? '#b91c1c' : '#e5e7eb',
+              background: s.done ? '#111' : '#e5e7eb',
               border: s.done ? 'none' : '1px solid #d1d5db',
             }} />
             {s.label}
@@ -49,7 +49,7 @@ const STATUS_BADGE = {
   'In Review':{ bg: '#fef9c3', color: '#854d0e' },
   Estimating: { bg: '#dbeafe', color: '#1e40af' },
   Submitted:  { bg: '#ede9fe', color: '#5b21b6' },
-  Lost:       { bg: '#fee2e2', color: '#991b1b' },
+  Lost:       { bg: '#f4f4f5', color: '#374151' },
 }
 
 export default async function BDTrackerPage() {

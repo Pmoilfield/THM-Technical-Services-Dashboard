@@ -14,8 +14,8 @@ const AGING_BUCKETS = [
   { key: 0, label: 'Current',     color: '#16a34a' },
   { key: 1, label: '1–30 days',   color: '#ca8a04' },
   { key: 2, label: '31–60 days',  color: '#ea580c' },
-  { key: 3, label: '61–90 days',  color: '#dc2626' },
-  { key: 4, label: '90+ days',    color: '#7f1d1d' },
+  { key: 3, label: '61–90 days',  color: '#374151' },
+  { key: 4, label: '90+ days',    color: '#111' },
 ]
 
 export default async function FinancialsPage() {
@@ -158,7 +158,7 @@ export default async function FinancialsPage() {
                     style={{
                       position: 'absolute', bottom: 0, left: 0, right: 0,
                       height: `${Math.round((m.invoiced / maxMonthly) * 120)}px`,
-                      background: '#fca5a5', borderRadius: '4px 4px 0 0',
+                      background: '#d1d5db', borderRadius: '4px 4px 0 0',
                       minHeight: m.invoiced > 0 ? '4px' : '0',
                     }}
                   />
@@ -168,7 +168,7 @@ export default async function FinancialsPage() {
                     style={{
                       position: 'absolute', bottom: 0, left: '20%', right: '20%',
                       height: `${Math.round((m.collected / maxMonthly) * 120)}px`,
-                      background: '#b91c1c', borderRadius: '4px 4px 0 0',
+                      background: '#374151', borderRadius: '4px 4px 0 0',
                       minHeight: m.collected > 0 ? '4px' : '0',
                     }}
                   />
@@ -180,10 +180,10 @@ export default async function FinancialsPage() {
           </div>
           <div style={{ display: 'flex', gap: '14px', fontSize: '11px', marginTop: '12px', color: 'var(--muted)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <div style={{ width: '12px', height: '12px', background: '#fca5a5', borderRadius: '2px' }} /> Invoiced
+              <div style={{ width: '12px', height: '12px', background: '#d1d5db', borderRadius: '2px' }} /> Invoiced
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <div style={{ width: '12px', height: '12px', background: '#b91c1c', borderRadius: '2px' }} /> Collected
+              <div style={{ width: '12px', height: '12px', background: '#374151', borderRadius: '2px' }} /> Collected
             </div>
           </div>
         </section>
