@@ -3,18 +3,28 @@ import { useState, useMemo } from 'react'
 import { createBrowserSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-const TRADES = ['Electrical', 'Instrumentation', 'Pipefitter', 'Construction Management', 'Project Management', 'Welder', 'Labourer', 'Operator', 'Quality']
+const TRADE_GROUPS = [
+  { label: 'Mechanical', trades: ['Pipefitter', 'Labourer', 'Operator'] },
+  { label: 'Weld',       trades: ['Weld – CWB', 'Weld – B-Pressure', 'Weld – Fire Watch'] },
+  { label: 'Electrical', trades: ['Electrical'] },
+  { label: 'Instrumentation', trades: ['Instrumentation'] },
+  { label: 'Management & Support', trades: ['Construction Management', 'Project Management', 'Quality'] },
+]
+const TRADES = TRADE_GROUPS.flatMap(g => g.trades)
 
 const TRADE_COLORS = {
-  'Electrical':              { bg: '#dbeafe', color: '#1e40af' },
-  'Instrumentation':         { bg: '#f3e8ff', color: '#6d28d9' },
-  'Pipefitter':              { bg: '#dcfce7', color: '#166534' },
-  'Construction Management': { bg: '#fef3c7', color: '#92400e' },
-  'Project Management':      { bg: '#fef3c7', color: '#92400e' },
-  'Welder':                  { bg: '#fee2e2', color: '#991b1b' },
-  'Labourer':                { bg: '#f3f4f6', color: '#374151' },
-  'Operator':                { bg: '#f3f4f6', color: '#374151' },
-  'Quality':                 { bg: '#e0f2fe', color: '#0369a1' },
+  'Electrical':              { bg: '#f0f0f0', color: '#374151' },
+  'Instrumentation':         { bg: '#f0f0f0', color: '#374151' },
+  'Pipefitter':              { bg: '#f0f0f0', color: '#374151' },
+  'Construction Management': { bg: '#f0f0f0', color: '#374151' },
+  'Project Management':      { bg: '#f0f0f0', color: '#374151' },
+  'Welder':                  { bg: '#f0f0f0', color: '#374151' },
+  'Weld – CWB':              { bg: '#f0f0f0', color: '#374151' },
+  'Weld – B-Pressure':       { bg: '#f0f0f0', color: '#374151' },
+  'Weld – Fire Watch':       { bg: '#f0f0f0', color: '#374151' },
+  'Labourer':                { bg: '#f0f0f0', color: '#374151' },
+  'Operator':                { bg: '#f0f0f0', color: '#374151' },
+  'Quality':                 { bg: '#f0f0f0', color: '#374151' },
 }
 
 function TradeBadge({ trade }) {
@@ -46,6 +56,29 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
 
   // Worker trade lookup
   const workerTrade = w => w.rates?.category || null
+
+  // Cert helpers
+  const today = new Date(); today.setHours(0,0,0,0)
+  const certExpired = c => c.expiry_date && new Date(c.expiry_date + 'T00:00:00') < today
+  const certSoon    = c => {
+    if (!c.expiry_date) return false
+    const d = new Date(c.expiry_date + 'T00:00:00')
+    const days = Math.floor((d - today) / 86400000)
+    return days >= 0 && days <= 30
+  }
+
+  function CertBadge({ cert }) {
+    const expired = certExpired(cert)
+    const soon    = !expired && certSoon(cert)
+    const bg    = expired ? '#fef2f2' : soon ? '#fffbeb' : '#f0f0f0'
+    const color = expired ? '#b91c1c' : soon ? '#b45309' : '#374151'
+    const border = expired ? '#fca5a5' : soon ? '#fde68a' : '#e5e7eb'
+    return (
+      <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '3px', background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap' }}>
+        {cert.cert_type}{expired ? ' – EXPIRED' : soon ? ' – exp soon' : ''}
+      </span>
+    )
+  }
 
   // ── Window CRUD ───────────────────────────────────────────────────────────
   const [newWindow, setNewWindow] = useState({ description: '', start_date: project.start_date || '', end_date: project.end_date || '' })
@@ -246,22 +279,29 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                   <button className="small" style={{ color: '#b91c1c', borderColor: '#fca5a5', marginBottom: '1px' }} onClick={() => deleteWindow(win.id)}>Delete Window</button>
                 </div>
 
-                {/* Trade requirements */}
+                {/* Trade requirements — grouped */}
                 <div>
-                  <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '8px' }}>Manpower Required</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {TRADES.map(trade => {
-                      const req = winReqs.find(r => r.trade === trade)
-                      const count = req?.headcount || 0
-                      return (
-                        <div key={trade} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', border: `1px solid ${count > 0 ? '#b91c1c' : 'var(--line)'}`, background: count > 0 ? '#fff5f5' : '#fafafa' }}>
-                          <TradeBadge trade={trade} />
-                          <button onClick={() => count > 0 && upsertRequirement(win.id, trade, count - 1)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', lineHeight: 1, color: 'var(--muted)' }}>−</button>
-                          <span style={{ fontSize: '14px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
-                          <button onClick={() => upsertRequirement(win.id, trade, count + 1)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontWeight: 700, fontSize: '14px', lineHeight: 1, color: 'var(--muted)' }}>+</button>
+                  <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {TRADE_GROUPS.map(group => (
+                      <div key={group.label}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '6px' }}>{group.label}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {group.trades.map(trade => {
+                            const req = winReqs.find(r => r.trade === trade)
+                            const count = req?.headcount || 0
+                            return (
+                              <div key={trade} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '4px', border: `1px solid ${count > 0 ? '#111' : 'var(--line)'}`, background: count > 0 ? '#f9f9f9' : '#fafafa' }}>
+                                <TradeBadge trade={trade} />
+                                <button onClick={() => count > 0 && upsertRequirement(win.id, trade, count - 1)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: '3px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', lineHeight: 1, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                                <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '14px', textAlign: 'center' }}>{count}</span>
+                                <button onClick={() => upsertRequirement(win.id, trade, count + 1)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: '3px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', lineHeight: 1, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                              </div>
+                            )
+                          })}
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -279,12 +319,14 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                         const w = workers.find(x => x.id === a.worker_id)
                         if (!w) return null
                         const conflict = workerConflict(w.id, win.id)
+                        const wCerts = w.worker_certifications || []
                         return (
-                          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '8px' }}>
+                          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '4px' }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
                                 <TradeBadge trade={a.trade || workerTrade(w)} />
+                                {wCerts.map(c => <CertBadge key={c.id} cert={c} />)}
                                 {conflict && <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {conflict}</span>}
                               </div>
                             </div>
@@ -306,12 +348,14 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                         .map(w => {
                           const trade = workerTrade(w)
                           const conflict = workerConflict(w.id, win.id)
+                          const wCerts = w.worker_certifications || []
                           return (
-                            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '8px', opacity: conflict ? 0.75 : 1 }}>
+                            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '4px', opacity: conflict ? 0.75 : 1 }}>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
                                   <TradeBadge trade={trade} />
+                                  {wCerts.map(c => <CertBadge key={c.id} cert={c} />)}
                                   {conflict && <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 600 }}>⚠ {conflict}</span>}
                                 </div>
                               </div>

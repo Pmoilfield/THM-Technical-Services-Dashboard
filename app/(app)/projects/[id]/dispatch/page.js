@@ -25,7 +25,7 @@ export default async function DispatchPage({ params }) {
     { data: crewAssignments },
     { data: allWindows },
   ] = await Promise.all([
-    supabase.from('workers').select('id, name, active, default_rate_id, rates(category)').eq('active', true).order('name'),
+    supabase.from('workers').select('id, name, active, default_rate_id, rates(category), worker_certifications(id, cert_type, cert_number, expiry_date)').eq('active', true).order('name'),
     supabase.from('project_crew_windows').select('*').eq('project_id', id).order('start_date'),
     supabase.from('crew_window_requirements').select('*'),
     supabase.from('crew_window_assignments').select('*'),

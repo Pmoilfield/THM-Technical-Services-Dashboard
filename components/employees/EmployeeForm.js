@@ -88,7 +88,9 @@ function ticketStatus(expiry_date) {
   return { label: 'Valid', color: '#16a34a', bg: '#f0fdf4' }
 }
 
-export default function EmployeeForm({ worker, rates, initialTickets = [], initialOrientations = [], initialHolidays = [] }) {
+const CERT_TYPES = ['CWB', 'B-Pressure']
+
+export default function EmployeeForm({ worker, rates, initialTickets = [], initialOrientations = [], initialHolidays = [], initialCertifications = [] }) {
   const router = useRouter()
   const supabase = createBrowserSupabase()
   const [saving, setSaving] = useState(false)
@@ -149,6 +151,20 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
   function updateHoliday(key, field, value) {
     setHolidays(prev => prev.map(h => h._key === key ? { ...h, [field]: value } : h))
   }
+
+  const [certs, setCerts] = useState(
+    initialCertifications.map(c => ({ ...c, _key: c.id }))
+  )
+  function addCert() {
+    setCerts(prev => [...prev, { _key: Math.random(), cert_type: 'CWB', cert_number: '', expiry_date: '', notes: '' }])
+  }
+  function removeCert(key) { setCerts(prev => prev.filter(c => c._key !== key)) }
+  function updateCert(key, field, value) {
+    setCerts(prev => prev.map(c => c._key === key ? { ...c, [field]: value } : c))
+  }
+
+  // Detect if current default rate is a Welder trade
+  const isWelder = rates.find(r => r.id === form.default_rate_id)?.category === 'Welder'
 
   const [fileModal, setFileModal] = useState(null) // ticket _key
   const [uploading, setUploading] = useState(null)
@@ -269,6 +285,22 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
         }))
       )
       if (holErr) { setError(holErr.message); setSaving(false); return }
+    }
+
+    // Save certifications — delete all then reinsert
+    await supabase.from('worker_certifications').delete().eq('worker_id', worker.id)
+    const validCerts = certs.filter(c => c.cert_type)
+    if (validCerts.length) {
+      const { error: certErr } = await supabase.from('worker_certifications').insert(
+        validCerts.map(c => ({
+          worker_id:   worker.id,
+          cert_type:   c.cert_type,
+          cert_number: c.cert_number || null,
+          expiry_date: c.expiry_date || null,
+          notes:       c.notes || null,
+        }))
+      )
+      if (certErr) { setError(certErr.message); setSaving(false); return }
     }
 
     router.push('/employees')
@@ -611,6 +643,75 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
             </div>
           )}
         </section>
+
+        {/* Welder Certifications — only shown when trade is Welder */}
+        {isWelder && (
+          <section className="panel">
+            <div className="split" style={{ marginBottom: '16px' }}>
+              <div>
+                <h2>Welder Certifications</h2>
+                <p className="muted" style={{ fontSize: '12px', marginTop: '2px' }}>CWB and B-Pressure certs — shown as badges in dispatch when assigning to weld scope.</p>
+              </div>
+              <button type="button" className="small primary" onClick={addCert}>+ Add Cert</button>
+            </div>
+
+            {certs.length === 0 && (
+              <p className="muted" style={{ fontSize: '13px' }}>No certifications recorded. Click <strong>+ Add Cert</strong> to add one.</p>
+            )}
+
+            {certs.length > 0 && (
+              <div style={{ display: 'grid', gap: '2px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 150px 90px 32px', gap: '8px', padding: '4px 0 8px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', borderBottom: '2px solid var(--line)' }}>
+                  <span>Type</span>
+                  <span>Cert Number</span>
+                  <span>Expiry Date</span>
+                  <span>Status</span>
+                  <span />
+                </div>
+                {certs.map(c => {
+                  const status = ticketStatus(c.expiry_date)
+                  return (
+                    <div key={c._key} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 150px 90px 32px', gap: '8px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                      <select
+                        value={c.cert_type}
+                        onChange={e => updateCert(c._key, 'cert_type', e.target.value)}
+                        style={{ fontSize: '13px', padding: '4px 8px' }}
+                      >
+                        {CERT_TYPES.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+                      </select>
+                      <input
+                        value={c.cert_number || ''}
+                        onChange={e => updateCert(c._key, 'cert_number', e.target.value)}
+                        placeholder="e.g. W47.2-2019-12345"
+                        style={{ fontSize: '13px', padding: '4px 8px' }}
+                      />
+                      <input
+                        type="date"
+                        value={c.expiry_date || ''}
+                        onChange={e => updateCert(c._key, 'expiry_date', e.target.value)}
+                        style={{ fontSize: '13px', padding: '4px 8px' }}
+                      />
+                      <div>
+                        {status ? (
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: status.bg, color: status.color, whiteSpace: 'nowrap' }}>
+                            {status.label}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>—</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCert(c._key)}
+                        style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '16px', cursor: 'pointer', padding: '2px 4px' }}
+                      >×</button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
         {error && <div className="notice danger">{error}</div>}
 
