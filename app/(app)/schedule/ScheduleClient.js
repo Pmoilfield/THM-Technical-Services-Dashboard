@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
@@ -43,8 +43,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
   const [assignments, setAssignments] = useState(initialAssignments)
   const [selectedProject, setSelectedProject] = useState(null)
   const [search, setSearch] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState('')
+  const dispatchRef = useRef(null)
 
   // Worker trade lookup via rates
   const rateMap = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
@@ -241,7 +240,11 @@ export default function ScheduleClient({ projects, workers, assignments: initial
               return (
                 <div
                   key={p.id}
-                  onClick={() => setSelectedProject(isSelected ? null : p.id)}
+                  onClick={() => {
+                    const next = isSelected ? null : p.id
+                    setSelectedProject(next)
+                    if (next) setTimeout(() => dispatchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+                  }}
                   style={{
                     display: 'grid', gridTemplateColumns: '280px 1fr', alignItems: 'center',
                     gap: '14px', padding: '6px 8px', borderRadius: '8px', cursor: 'pointer',
@@ -328,7 +331,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
 
       {/* ── Dispatch panel ── */}
       {selProj && (
-        <section className="panel">
+        <section className="panel" ref={dispatchRef}>
           <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '15px', fontWeight: 700 }}>{selProj.name}</h2>
