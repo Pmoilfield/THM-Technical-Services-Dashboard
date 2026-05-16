@@ -206,7 +206,7 @@ label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(-
 /* Alert / notice */
 .notice { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 12px 14px; font-size: 13px; }
 .notice a { color: #1d4ed8; font-weight: 700; text-decoration: none; }
-.notice.warn { background: #fffaeb; border-color: #fedf89; }
+.notice.warn { background: #eff6ff; border-color: #bfdbfe; }
 .notice.good { background: #f6fef9; border-color: #abefc6; }
 .notice.danger { background: #f4f4f5; border-color: #e4e4e7; }
 
