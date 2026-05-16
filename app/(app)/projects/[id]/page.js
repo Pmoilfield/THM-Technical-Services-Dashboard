@@ -61,13 +61,13 @@ export default async function ProjectPage({ params }) {
           </div>
           <div className="toolbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
-            <Link href={`/projects/${id}/edit`}><button style={{ borderRadius: '8px' }}>Edit</button></Link>
+            <Link href={`/projects/${id}/edit`}><button>Edit</button></Link>
             <ArchiveButton projectId={id} archived={project.archived} />
             <DeleteProjectButton projectId={id} projectName={project.name} />
             <SendToProposalsButton projectId={id} projectName={project.name} clientName={project.client_name} estimatedValue={project.estimate_subtotal} hasProposal={!!proposal} />
-            <Link href={`/projects/${id}/pos/new`}><button style={{ borderRadius: '8px' }}>+ PO</button></Link>
-            <Link href={`/projects/${id}/dispatch`}><button style={{ borderRadius: '8px' }}>Dispatch</button></Link>
-            <Link href={`/field-tickets/new?project=${id}`}><button className="primary" style={{ borderRadius: '24px' }}>+ Field Ticket</button></Link>
+            <Link href={`/projects/${id}/pos/new`}><button>+ PO</button></Link>
+            <Link href={`/projects/${id}/dispatch`}><button>Dispatch</button></Link>
+            <Link href={`/field-tickets/new?project=${id}`}><button className="primary">+ Field Ticket</button></Link>
           </div>
         </div>
       </div>
