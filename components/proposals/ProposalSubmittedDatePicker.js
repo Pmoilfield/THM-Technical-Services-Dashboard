@@ -119,7 +119,7 @@ export default function ProposalSubmittedDatePicker({ proposalId, currentDate })
           style={{
             padding: '6px 12px',
             borderRadius: '4px',
-            background: date ? '#111' : '#d1d5db',
+            background: date ? '#9ca3af' : '#d1d5db',
             color: '#fff',
             border: 'none',
             cursor: date ? 'pointer' : 'not-allowed',

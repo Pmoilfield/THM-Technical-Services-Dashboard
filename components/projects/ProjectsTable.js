@@ -33,7 +33,7 @@ function ColumnFilter({ label, values, selected, onChange, numeric }) {
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          background: active ? '#111' : 'transparent',
+          background: active ? '#9ca3af' : 'transparent',
           border: active ? 'none' : '1px solid #d1d5db',
           borderRadius: '3px',
           padding: '1px 4px',

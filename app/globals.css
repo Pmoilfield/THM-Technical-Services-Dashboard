@@ -4,7 +4,7 @@
   --ink: #1a1a1a;
   --muted: #6b7280;
   --line: #e5e7eb;
-  --accent: #111111;
+  --accent: #9ca3af;
   --accent-2: #27272a;
   --danger: #111111;
   --warning: #b54708;
@@ -129,7 +129,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.2);
 }
 textarea { min-height: 110px; resize: vertical; }
 label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--ink); }
