@@ -3,238 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Preview — #9ca3af accent</title>
+<title>Dashboard Preview — Notice options</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root { --accent: #9ca3af; --line: #e5e7eb; --muted: #6b7280; --ink: #1a1a1a; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Inter, sans-serif; background: #f5f5f5; color: var(--ink); display: flex; min-height: 100vh; font-size: 13px; }
+  body { font-family: Inter, sans-serif; background: #e0e0e0; color: var(--ink); display: flex; min-height: 100vh; gap: 3px; }
 
-  /* Sidebar */
+  /* Shared shell */
+  .shell { flex: 1; display: flex; background: #f5f5f5; min-width: 0; }
+
   .sidebar { width: 200px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 16px 10px; gap: 2px; }
-  .logo { padding: 0 4px 14px; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
-  .logo img { max-height: 38px; }
-  .logo-text { font-size: 15px; font-weight: 800; color: #b91c1c; letter-spacing: -0.02em; }
-  .logo-sub { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #999; }
-  .nav-item { padding: 9px 12px; border-radius: 4px; font-size: 13px; color: #374151; margin-bottom: 1px; }
-  .nav-item.active { background: var(--accent); color: #fff; font-weight: 700; }
+  .logo-text { font-size: 12px; font-weight: 800; color: #b91c1c; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+  .nav-item { padding: 9px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 1px; }
+  .nav-item.active { background: var(--accent); color: #fff; }
+  .sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
 
-  /* Main */
-  .main { flex: 1; padding: 24px; overflow: auto; }
-
-  /* Header */
+  .main { flex: 1; padding: 22px; overflow: auto; min-width: 0; }
   .split { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 2px; }
-  .muted { color: var(--muted); }
+  h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px; }
 
-  /* Buttons */
-  button { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; border: 0; border-radius: 4px; padding: 0 14px; height: 32px; display: inline-flex; align-items: center; cursor: pointer; background: #f0f0f0; color: var(--ink); }
+  button { font-family: Inter, sans-serif; font-size: 13px; font-weight: 700; border: 0; border-radius: 4px; padding: 0 14px; height: 32px; display: inline-flex; align-items: center; cursor: pointer; background: #f0f0f0; color: var(--ink); white-space: nowrap; }
   button.primary { background: var(--accent); color: #fff; }
   button.ghost { background: transparent; border: 1px solid var(--line); color: #374151; }
   button.small { height: 26px; padding: 0 10px; font-size: 12px; }
   .toolbar { display: flex; gap: 8px; align-items: center; }
 
-  /* Cards */
-  .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .notice { padding: 11px 16px; font-size: 13px; border: 1px solid; margin-bottom: 10px; }
+  .notice a { font-weight: 700; text-decoration: none; }
+
+  /* Blue */
+  .blue { background: #eff6ff; border-color: #bfdbfe; border-radius: 8px; color: var(--ink); }
+  .blue a { color: #1d4ed8; }
+
+  /* Amber square */
+  .amber { background: #fffaeb; border-color: #fde68a; border-radius: 4px; color: var(--ink); }
+  .amber a { color: #92400e; }
+
+  .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
   .card .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-  .card .value { font-size: 15px; font-weight: 800; margin-top: 6px; letter-spacing: -0.03em; }
-  .card .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .card .value { font-size: 15px; font-weight: 800; margin-top: 5px; letter-spacing: -0.03em; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
   .card.good { border-color: #abefc6; background: #f6fef9; }
+  .card.good .value { color: #15803d; }
 
-  /* Notice */
-  .notice { background: #fffaeb; border: 1px solid #fedf89; border-radius: 10px; padding: 10px 14px; font-size: 12px; margin-bottom: 12px; }
-
-  /* Grid */
-  .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-
-  /* Panel */
-  .panel { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
   .panel h2 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
 
-  /* Table */
-  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: white; margin-top: 12px; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: white; margin-top: 10px; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #475467; padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
-  td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+  th { background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #475467; padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; font-weight: 700; }
+  td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
   tr:last-child td { border-bottom: 0; }
 
-  /* Pills */
-  .pill { display: inline-flex; align-items: center; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 700; border: 1px solid; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 700; border: 1px solid; white-space: nowrap; }
   .pill::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 5px; background: currentColor; opacity: 0.55; }
   .p-green { background: #f3f6f4; color: #2d5a3d; border-color: #ccddd3; }
   .p-grey  { background: #f4f4f5; color: #52525b; border-color: #e4e4e7; }
   .p-amber { background: #fdf7f0; color: #7a4c15; border-color: #e8d0aa; }
 
-  /* Progress */
-  .progress { height: 8px; background: #eef2f6; border-radius: 999px; overflow: hidden; margin-bottom: 3px; }
+  .progress { height: 8px; background: #eef2f6; border-radius: 999px; overflow: hidden; margin-bottom: 2px; }
   .progress-bar { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-
-  /* User footer */
-  .sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
-  .sidebar-footer .name { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .sidebar-footer button { width: 100%; background: #f0f0f0; color: #374151; font-size: 12px; text-align: left; justify-content: flex-start; }
-
   .numeric { text-align: right; }
   .fine-print { font-size: 11px; color: var(--muted); }
+  .muted { color: var(--muted); }
+
+  .qa-item { border: 1px solid var(--line); border-radius: 10px; padding: 11px; background: #fafcff; margin-bottom: 8px; }
+  .qa-title { font-weight: 700; margin-bottom: 2px; font-size: 13px; }
+
+  .col-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #fff; background: #9ca3af; text-align: center; padding: 7px; }
 </style>
 </head>
 <body>
 
-<div class="sidebar">
-  <div class="logo">
-    <div class="logo-text">THM</div>
-    <div class="logo-sub">Technical Services</div>
+<!-- BLUE -->
+<div class="shell">
+  <div class="sidebar">
+    <div class="logo-text">THM | TECHNICAL SERVICES</div>
+    <div class="nav-item active">Dashboard</div>
+    <div class="nav-item">BD Tracker</div>
+    <div class="nav-item">Projects</div>
+    <div class="nav-item">Field Tickets</div>
+    <div class="nav-item">Purchase Orders</div>
+    <div class="nav-item">Invoices</div>
+    <div class="nav-item">Financials</div>
+    <div class="nav-item">Schedule</div>
+    <div class="nav-item">Rate Schedules</div>
+    <div class="nav-item">Time Entry</div>
+    <div class="nav-item">Employees</div>
+    <div class="nav-item">Vendors</div>
+    <div class="nav-item">Payroll</div>
+    <div class="sidebar-footer">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Pmcdougall</div>
+      <span class="pill p-grey" style="font-size:10px;">Admin</span>
+    </div>
   </div>
-  <div class="nav-item active">Dashboard</div>
-  <div class="nav-item">BD Tracker</div>
-  <div class="nav-item">Projects</div>
-  <div class="nav-item">Field Tickets</div>
-  <div class="nav-item">Purchase Orders</div>
-  <div class="nav-item">Invoices</div>
-  <div class="nav-item">Financials</div>
-  <div class="nav-item">Schedule</div>
-  <div class="nav-item">Rate Schedules</div>
-  <div class="nav-item">Time Entry</div>
-  <div class="nav-item">Employees</div>
-  <div class="nav-item">Vendors</div>
-  <div class="nav-item">Payroll</div>
-  <div class="sidebar-footer">
-    <div class="name">Pmcdougall</div>
-    <span class="pill p-grey" style="font-size:10px; margin-bottom:8px;">Admin</span><br><br>
-    <button>Sign out</button>
+  <div class="main">
+    <div class="col-label">A — Blue notice (border-radius: 8px)</div>
+    <div class="split" style="margin: 16px 0 14px;">
+      <div><h1>Portfolio Dashboard</h1><p class="muted fine-print">THM Technical Services — 101 projects</p></div>
+      <div class="toolbar"><button class="primary">+ New Project</button><button>+ Field Ticket</button></div>
+    </div>
+    <div class="notice blue"><strong>2 new proposals</strong> waiting for review. <a href="#">View proposals →</a></div>
+    <div class="notice blue"><strong>4 field tickets</strong> waiting for approval. <a href="#">Review now →</a></div>
+    <div class="cards">
+      <div class="card"><div class="label">Projects</div><div class="value">101</div><div class="sub">97 active</div></div>
+      <div class="card"><div class="label">Portfolio Estimate</div><div class="value">$135,952.10</div><div class="sub">Before GST</div></div>
+      <div class="card"><div class="label">Accruals To Date</div><div class="value">$33,803.51</div><div class="sub">24.9% spent</div></div>
+      <div class="card good"><div class="label">Remaining</div><div class="value">$102,148.58</div><div class="sub">Estimate minus accruals</div></div>
+      <div class="card"><div class="label">Invoiced</div><div class="value">$0.00</div><div class="sub">$24,192.00 in draft</div></div>
+    </div>
+    <div class="grid-two">
+      <div class="panel">
+        <div class="split"><h2>Status breakdown</h2><button class="ghost small">All projects</button></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Status</th><th class="numeric">Projects</th><th class="numeric">Share</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill p-grey">Estimating</span></td><td class="numeric">31</td><td class="numeric">19.1%</td></tr>
+            <tr><td><span class="pill p-green">Active</span></td><td class="numeric">65</td><td class="numeric">40.1%</td></tr>
+            <tr><td><span class="pill p-amber">On Hold</span></td><td class="numeric">1</td><td class="numeric">0.6%</td></tr>
+            <tr><td><span class="pill p-grey">Archived</span></td><td class="numeric">61</td><td class="numeric">37.7%</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Quick actions</h2>
+        <div style="margin-top:10px;">
+          <div class="qa-item"><div class="qa-title">New Field Ticket</div><div class="fine-print">Assemble crew time entries into a client ticket</div></div>
+          <div class="qa-item"><div class="qa-title">New Invoice</div><div class="fine-print">Bundle approved tickets into a client invoice</div></div>
+          <div class="qa-item"><div class="qa-title">New Project</div><div class="fine-print">Set up a new project with estimate and scope</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="split"><div><h2>Projects</h2><p class="fine-print muted">Most recently updated.</p></div><button class="ghost small">View all →</button></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Project</th><th>Client</th><th>Status</th><th class="numeric">Estimate</th><th class="numeric">Accruals</th><th class="numeric">Remaining</th><th class="numeric">Spent</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Wainwright ECAP Bracket Install</strong><div class="fine-print">E.027618</div></td><td>Wainwright<div class="fine-print">AB</div></td><td><span class="pill p-green">Active</span></td><td class="numeric">$51,065.46</td><td class="numeric">$4,590.00</td><td class="numeric">$46,475.46</td><td class="numeric" style="min-width:90px;"><div class="progress"><span class="progress-bar" style="width:9%"></span></div><span class="fine-print">9.0%</span></td></tr>
+          <tr><td><strong>Alces Compressor B2 Obsolescence</strong><div class="fine-print">E.027501</div></td><td>TC Energy<div class="fine-print">AB</div></td><td><span class="pill p-grey">Estimating</span></td><td class="numeric">$0.00</td><td class="numeric">$12,780.38</td><td class="numeric">-$12,780.38</td><td class="numeric" style="min-width:90px;"><div class="progress"><span class="progress-bar" style="width:0%"></span></div><span class="fine-print">0.0%</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
   </div>
 </div>
 
-<div class="main">
-  <div class="split" style="margin-bottom: 20px;">
-    <div>
-      <h1>Portfolio Dashboard</h1>
-      <p class="muted fine-print">THM Technical Services — 12 projects</p>
-    </div>
-    <div class="toolbar">
-      <button class="primary">+ New Project</button>
-      <button>+ Field Ticket</button>
+<div style="width:3px; background:#ccc; flex-shrink:0;"></div>
+
+<!-- AMBER SQUARE -->
+<div class="shell">
+  <div class="sidebar">
+    <div class="logo-text">THM | TECHNICAL SERVICES</div>
+    <div class="nav-item active">Dashboard</div>
+    <div class="nav-item">BD Tracker</div>
+    <div class="nav-item">Projects</div>
+    <div class="nav-item">Field Tickets</div>
+    <div class="nav-item">Purchase Orders</div>
+    <div class="nav-item">Invoices</div>
+    <div class="nav-item">Financials</div>
+    <div class="nav-item">Schedule</div>
+    <div class="nav-item">Rate Schedules</div>
+    <div class="nav-item">Time Entry</div>
+    <div class="nav-item">Employees</div>
+    <div class="nav-item">Vendors</div>
+    <div class="nav-item">Payroll</div>
+    <div class="sidebar-footer">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Pmcdougall</div>
+      <span class="pill p-grey" style="font-size:10px;">Admin</span>
     </div>
   </div>
-
-  <div class="notice">
-    <strong>4 field tickets</strong> waiting for approval. <a href="#" style="color:var(--ink); font-weight:600;">Review now →</a>
-  </div>
-
-  <div class="cards">
-    <div class="card">
-      <div class="label">Projects</div>
-      <div class="value">12</div>
-      <div class="sub">8 active</div>
+  <div class="main">
+    <div class="col-label">B — Amber notice (border-radius: 4px)</div>
+    <div class="split" style="margin: 16px 0 14px;">
+      <div><h1>Portfolio Dashboard</h1><p class="muted fine-print">THM Technical Services — 101 projects</p></div>
+      <div class="toolbar"><button class="primary">+ New Project</button><button>+ Field Ticket</button></div>
     </div>
-    <div class="card">
-      <div class="label">Portfolio Estimate</div>
-      <div class="value">$2,410,500</div>
-      <div class="sub">Before GST</div>
+    <div class="notice amber"><strong>2 new proposals</strong> waiting for review. <a href="#">View proposals →</a></div>
+    <div class="notice amber"><strong>4 field tickets</strong> waiting for approval. <a href="#">Review now →</a></div>
+    <div class="cards">
+      <div class="card"><div class="label">Projects</div><div class="value">101</div><div class="sub">97 active</div></div>
+      <div class="card"><div class="label">Portfolio Estimate</div><div class="value">$135,952.10</div><div class="sub">Before GST</div></div>
+      <div class="card"><div class="label">Accruals To Date</div><div class="value">$33,803.51</div><div class="sub">24.9% spent</div></div>
+      <div class="card good"><div class="label">Remaining</div><div class="value">$102,148.58</div><div class="sub">Estimate minus accruals</div></div>
+      <div class="card"><div class="label">Invoiced</div><div class="value">$0.00</div><div class="sub">$24,192.00 in draft</div></div>
     </div>
-    <div class="card">
-      <div class="label">Accruals To Date</div>
-      <div class="value">$1,184,230</div>
-      <div class="sub">49.1% spent</div>
-    </div>
-    <div class="card good">
-      <div class="label">Remaining</div>
-      <div class="value">$1,226,270</div>
-      <div class="sub">Estimate minus accruals</div>
-    </div>
-    <div class="card">
-      <div class="label">Invoiced</div>
-      <div class="value">$892,000</div>
-      <div class="sub">$44,000 in draft</div>
-    </div>
-  </div>
-
-  <div class="grid-two">
-    <div class="panel">
-      <div class="split">
-        <h2>Status breakdown</h2>
-        <button class="ghost small">All projects</button>
-      </div>
-      <div class="table-wrap">
-        <table>
+    <div class="grid-two">
+      <div class="panel">
+        <div class="split"><h2>Status breakdown</h2><button class="ghost small">All projects</button></div>
+        <div class="table-wrap"><table>
           <thead><tr><th>Status</th><th class="numeric">Projects</th><th class="numeric">Share</th></tr></thead>
           <tbody>
-            <tr><td><span class="pill p-green">Active</span></td><td class="numeric">5</td><td class="numeric">41.7%</td></tr>
-            <tr><td><span class="pill p-grey">Estimating</span></td><td class="numeric">3</td><td class="numeric">25.0%</td></tr>
-            <tr><td><span class="pill p-green">Awarded</span></td><td class="numeric">2</td><td class="numeric">16.7%</td></tr>
-            <tr><td><span class="pill p-grey">Complete</span></td><td class="numeric">1</td><td class="numeric">8.3%</td></tr>
-            <tr><td><span class="pill p-amber">On Hold</span></td><td class="numeric">1</td><td class="numeric">8.3%</td></tr>
+            <tr><td><span class="pill p-grey">Estimating</span></td><td class="numeric">31</td><td class="numeric">19.1%</td></tr>
+            <tr><td><span class="pill p-green">Active</span></td><td class="numeric">65</td><td class="numeric">40.1%</td></tr>
+            <tr><td><span class="pill p-amber">On Hold</span></td><td class="numeric">1</td><td class="numeric">0.6%</td></tr>
+            <tr><td><span class="pill p-grey">Archived</span></td><td class="numeric">61</td><td class="numeric">37.7%</td></tr>
           </tbody>
-        </table>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Quick actions</h2>
+        <div style="margin-top:10px;">
+          <div class="qa-item"><div class="qa-title">New Field Ticket</div><div class="fine-print">Assemble crew time entries into a client ticket</div></div>
+          <div class="qa-item"><div class="qa-title">New Invoice</div><div class="fine-print">Bundle approved tickets into a client invoice</div></div>
+          <div class="qa-item"><div class="qa-title">New Project</div><div class="fine-print">Set up a new project with estimate and scope</div></div>
+        </div>
       </div>
     </div>
-
     <div class="panel">
-      <h2>Quick actions</h2>
-      <div style="display:grid; gap:10px; margin-top:12px;">
-        <div style="border:1px solid var(--line); border-radius:10px; padding:14px; background:#fafcff;">
-          <div style="font-weight:700; margin-bottom:4px;">New Field Ticket</div>
-          <div class="fine-print">Assemble crew time entries into a client ticket</div>
-        </div>
-        <div style="border:1px solid var(--line); border-radius:10px; padding:14px; background:#fafcff;">
-          <div style="font-weight:700; margin-bottom:4px;">New Invoice</div>
-          <div class="fine-print">Bundle approved tickets into a client invoice</div>
-        </div>
-        <div style="border:1px solid var(--line); border-radius:10px; padding:14px; background:#fafcff;">
-          <div style="font-weight:700; margin-bottom:4px;">New Project</div>
-          <div class="fine-print">Set up a new project with estimate and scope</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="split">
-      <div>
-        <h2>Projects</h2>
-        <p class="muted fine-print">Most recently updated projects.</p>
-      </div>
-      <button class="ghost small">View all →</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Project</th><th>Client</th><th>Status</th><th>Manager</th><th class="numeric">Estimate</th><th class="numeric">Accruals</th><th class="numeric">Remaining</th><th class="numeric">Spent</th></tr>
-        </thead>
+      <div class="split"><div><h2>Projects</h2><p class="fine-print muted">Most recently updated.</p></div><button class="ghost small">View all →</button></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Project</th><th>Client</th><th>Status</th><th class="numeric">Estimate</th><th class="numeric">Accruals</th><th class="numeric">Remaining</th><th class="numeric">Spent</th></tr></thead>
         <tbody>
-          <tr>
-            <td><strong>Wainwright ECAP</strong><div class="fine-print">E.027618</div></td>
-            <td>Wainwright<div class="fine-print">Wainwright, AB</div></td>
-            <td><span class="pill p-green">Active</span></td>
-            <td>P. McDougall</td>
-            <td class="numeric">$284,500</td>
-            <td class="numeric">$142,300</td>
-            <td class="numeric">$142,200</td>
-            <td class="numeric" style="min-width:110px;"><div class="progress"><span class="progress-bar" style="width:50%"></span></div><span class="fine-print">50.0%</span></td>
-          </tr>
-          <tr>
-            <td><strong>Wainwright LDAR Scrubber</strong><div class="fine-print">E.027544</div></td>
-            <td>Wainwright<div class="fine-print">Wainwright, AB</div></td>
-            <td><span class="pill p-green">Active</span></td>
-            <td>P. McDougall</td>
-            <td class="numeric">$51,065</td>
-            <td class="numeric">$18,420</td>
-            <td class="numeric">$32,645</td>
-            <td class="numeric" style="min-width:110px;"><div class="progress"><span class="progress-bar" style="width:36%"></span></div><span class="fine-print">36.1%</span></td>
-          </tr>
-          <tr>
-            <td><strong>Cenovus Tank Farm</strong><div class="fine-print">E.027501</div></td>
-            <td>Cenovus<div class="fine-print">Cold Lake, AB</div></td>
-            <td><span class="pill p-amber">On Hold</span></td>
-            <td>S. Thiessen</td>
-            <td class="numeric">$620,000</td>
-            <td class="numeric">$0</td>
-            <td class="numeric">$620,000</td>
-            <td class="numeric" style="min-width:110px;"><div class="progress"><span class="progress-bar" style="width:0%"></span></div><span class="fine-print">0.0%</span></td>
-          </tr>
+          <tr><td><strong>Wainwright ECAP Bracket Install</strong><div class="fine-print">E.027618</div></td><td>Wainwright<div class="fine-print">AB</div></td><td><span class="pill p-green">Active</span></td><td class="numeric">$51,065.46</td><td class="numeric">$4,590.00</td><td class="numeric">$46,475.46</td><td class="numeric" style="min-width:90px;"><div class="progress"><span class="progress-bar" style="width:9%"></span></div><span class="fine-print">9.0%</span></td></tr>
+          <tr><td><strong>Alces Compressor B2 Obsolescence</strong><div class="fine-print">E.027501</div></td><td>TC Energy<div class="fine-print">AB</div></td><td><span class="pill p-grey">Estimating</span></td><td class="numeric">$0.00</td><td class="numeric">$12,780.38</td><td class="numeric">-$12,780.38</td><td class="numeric" style="min-width:90px;"><div class="progress"><span class="progress-bar" style="width:0%"></span></div><span class="fine-print">0.0%</span></td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 </div>
