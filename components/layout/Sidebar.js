@@ -61,7 +61,7 @@ export default function Sidebar({ user, profile }) {
               background: active ? '#9ca3af' : 'transparent',
               textDecoration: 'none',
               fontSize: '14px',
-              fontWeight: active ? 700 : 400,
+              fontWeight: 700,
               transition: 'all 0.15s',
             }}>
               {item.label}
@@ -86,7 +86,7 @@ export default function Sidebar({ user, profile }) {
                   background: active ? '#e0f2f1' : 'transparent',
                   textDecoration: 'none',
                   fontSize: '14px',
-                  fontWeight: active ? 700 : 400,
+                  fontWeight: 700,
                 }}>
                   {item.label}
                 </Link>
