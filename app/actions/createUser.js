@@ -14,9 +14,12 @@ export async function createUser({ email, password, fullName, role }) {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+  if (profile?.role !== 'admin') {
     return { error: 'Only admins can create users' }
   }
+
+  const VALID_ROLES = ['worker', 'foreman', 'pm', 'billing', 'admin']
+  if (!VALID_ROLES.includes(role)) return { error: 'Invalid role' }
 
   if (!email || !password) return { error: 'Email and password are required' }
   if (password.length < 8) return { error: 'Password must be at least 8 characters' }
@@ -40,7 +43,7 @@ export async function createUser({ email, password, fullName, role }) {
       id: created.user.id,
       email,
       full_name: fullName || null,
-      role: role || 'user',
+      role: role || 'worker',
       is_active: true,
     })
 

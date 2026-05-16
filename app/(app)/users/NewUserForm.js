@@ -8,7 +8,7 @@ export default function NewUserForm() {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('user')
+  const [role, setRole] = useState('worker')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -36,8 +36,8 @@ export default function NewUserForm() {
     if (res.error) {
       setError(res.error)
     } else {
-      setSuccess(`User created. Give them this password: ${password}`)
-      setEmail(''); setFullName(''); setRole('user'); setPassword(''); setConfirm('')
+      setSuccess(`User created successfully. Share the password you set with them directly.`)
+      setEmail(''); setFullName(''); setRole('worker'); setPassword(''); setConfirm('')
       router.refresh()
     }
   }
@@ -67,19 +67,21 @@ export default function NewUserForm() {
           <label>
             Role
             <select value={role} onChange={e => setRole(e.target.value)}>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-              <option value="owner">Owner</option>
+              <option value="worker">Worker — field access only, read-only data</option>
+              <option value="foreman">Foreman — field access + can submit tickets</option>
+              <option value="pm">PM — project management, estimates, dispatch</option>
+              <option value="billing">Billing — invoices, financials, POs</option>
+              <option value="admin">Admin — full access to everything</option>
             </select>
           </label>
           <div />
           <label>
             Password
-            <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" required />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" required />
           </label>
           <label>
             Confirm password
-            <input type="text" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+            <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
           </label>
         </div>
 
