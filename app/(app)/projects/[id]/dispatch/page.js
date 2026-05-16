@@ -50,7 +50,7 @@ export default async function DispatchPage({ params }) {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Link href={`/projects/${id}`}><button style={{ borderRadius: '8px' }}>← Back to Project</button></Link>
+            <Link href={`/projects/${id}`}><button>← Back to Project</button></Link>
           </div>
         </div>
       </div>

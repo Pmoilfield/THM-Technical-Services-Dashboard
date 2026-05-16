@@ -28,7 +28,7 @@ export default function DeleteProjectButton({ projectId, projectName }) {
       <button
         className="danger"
         onClick={() => { setOpen(true); setConfirm(''); setError('') }}
-        style={{ opacity: 0.8, borderRadius: '8px' }}
+        style={{ opacity: 0.8 }}
       >
         Delete
       </button>

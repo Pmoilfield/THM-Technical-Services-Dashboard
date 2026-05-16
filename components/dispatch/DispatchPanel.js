@@ -254,7 +254,7 @@ export default function DispatchPanel({ project, initialWindows, initialRequirem
                 </div>
               </div>
               <span style={{ fontSize: '12px', fontWeight: 700, color: statusColor }}>{statusLabel}</span>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)', background: '#f3f4f6', padding: '2px 10px', borderRadius: '99px' }}>{stats.assigned}/{stats.required} assigned</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#52525b', background: '#f4f4f5', padding: '2px 10px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>{stats.assigned}/{stats.required} assigned</span>
               <span style={{ color: 'var(--muted)', fontSize: '16px' }}>{isOpen ? '▲' : '▼'}</span>
             </div>
 

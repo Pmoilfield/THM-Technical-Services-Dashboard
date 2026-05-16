@@ -55,7 +55,7 @@ export default function Sidebar({ user, profile }) {
               alignItems: 'center',
               gap: '10px',
               padding: '10px 12px',
-              borderRadius: '10px',
+              borderRadius: '4px',
               marginBottom: '2px',
               color: active ? '#ffffff' : '#374151',
               background: active ? '#b91c1c' : 'transparent',
@@ -80,7 +80,7 @@ export default function Sidebar({ user, profile }) {
                   alignItems: 'center',
                   gap: '10px',
                   padding: '10px 12px',
-                  borderRadius: '10px',
+                  borderRadius: '4px',
                   marginBottom: '2px',
                   color: active ? '#0f766e' : '#4b5563',
                   background: active ? '#e0f2f1' : 'transparent',
@@ -108,7 +108,7 @@ export default function Sidebar({ user, profile }) {
         </div>
         <button
           onClick={handleSignOut}
-          style={{ background: '#f3f4f6', color: '#374151', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', fontSize: '13px' }}
+          style={{ background: '#f0f0f0', color: '#374151', width: '100%', textAlign: 'left', fontSize: '13px' }}
         >
           Sign out
         </button>

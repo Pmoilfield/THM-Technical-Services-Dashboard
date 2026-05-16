@@ -32,19 +32,23 @@ button {
   cursor: pointer;
   border: 0;
   border-radius: 4px;
-  padding: 9px 14px;
-  background: #e6edf3;
+  padding: 0 14px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  background: #f0f0f0;
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
+  font-size: 13px;
 }
-button:hover { filter: brightness(0.97); }
+button:hover { filter: brightness(0.96); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button.primary { background: var(--accent); color: white; }
 button.ghost { background: transparent; color: var(--accent-2); border: 1px solid var(--line); }
-button.danger { background: #fee4e2; color: var(--danger); }
-button.small { padding: 6px 10px; font-size: 12px; }
-button.icon { padding: 8px; border-radius: 4px; line-height: 1; }
+button.danger { background: #f5e8e8; color: var(--danger); }
+button.small { height: 26px; padding: 0 10px; font-size: 12px; }
+button.icon { padding: 0 8px; }
 
 /* Layout */
 .app-shell { display: flex; min-height: 100vh; }
@@ -116,7 +120,7 @@ tr:hover td { background: #fafcff; }
 input, textarea, select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 8px 10px;
   background: white;
   color: var(--ink);
@@ -140,27 +144,44 @@ label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(-
   display: inline-flex;
   align-items: center;
   border-radius: 4px;
-  padding: 4px 9px;
-  font-size: 12px;
+  padding: 3px 8px;
+  font-size: 11px;
   font-weight: 700;
-  background: #eef2f6;
-  color: #344054;
+  background: #f4f4f5;
+  color: #52525b;
+  border: 1px solid #e4e4e7;
   white-space: nowrap;
 }
-.status-Estimating { background: #eff8ff; color: #175cd3; }
-.status-Awarded, .status-Active { background: #ecfdf3; color: #067647; }
-.status-Complete { background: #f4f3ff; color: #5925dc; }
-.status-On-Hold { background: #fffaeb; color: #b54708; }
-.status-Cancelled { background: #fff1f3; color: #c01048; }
-.status-Planned { background: #eef7ff; color: #155e75; }
-.status-draft { background: #eef2f6; color: #344054; }
-.status-submitted { background: #eff8ff; color: #175cd3; }
-.status-approved { background: #ecfdf3; color: #067647; }
-.status-rejected { background: #fff1f3; color: #c01048; }
-.status-invoiced { background: #f4f3ff; color: #5925dc; }
-.status-sent { background: #eff8ff; color: #175cd3; }
-.status-paid { background: #ecfdf3; color: #067647; }
-.status-void { background: #eef2f6; color: var(--muted); }
+.status-pill::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: currentColor;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+/* Green — active / good */
+.status-Active, .status-Awarded, .status-approved, .status-paid {
+  background: #f3f6f4; color: #2d5a3d; border-color: #ccddd3;
+}
+/* Amber — warning / hold */
+.status-On-Hold {
+  background: #fdf7f0; color: #7a4c15; border-color: #e8d0aa;
+}
+/* Red — cancelled / rejected */
+.status-Cancelled, .status-rejected {
+  background: #fdf3f3; color: #7f2020; border-color: #e8c4c4;
+}
+/* Grey — all other states */
+.status-Estimating, .status-Complete, .status-Planned,
+.status-draft, .status-submitted, .status-invoiced,
+.status-sent, .status-void {
+  background: #f4f4f5; color: #52525b; border-color: #e4e4e7;
+}
 
 /* Utilities */
 .muted { color: var(--muted); }

@@ -468,7 +468,7 @@ export default function EmployeeForm({ worker, rates, initialTickets = [], initi
                     />
                     <div>
                       {status ? (
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px', background: status.bg, color: status.color, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: status.bg, color: status.color, whiteSpace: 'nowrap', border: '1px solid', borderColor: status.color + '44' }}>
                           {status.label}
                         </span>
                       ) : (

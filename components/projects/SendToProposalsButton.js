@@ -30,7 +30,6 @@ export default function SendToProposalsButton({ projectId, projectName, clientNa
     return (
       <button
         onClick={handleSend}
-        style={{ borderRadius: '8px' }}
         title="View in proposal pipeline"
       >
         In Pipeline
@@ -43,7 +42,6 @@ export default function SendToProposalsButton({ projectId, projectName, clientNa
       <button
         onClick={handleSend}
         disabled={loading}
-        style={{ borderRadius: '8px' }}
         title="Send to proposal pipeline"
       >
         {loading ? 'Sending...' : 'Send to Proposals'}

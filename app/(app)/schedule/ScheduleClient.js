@@ -259,10 +259,10 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                     <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>{p.internal_job_no || '—'}</span>
                       {hasConflict
-                        ? <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '99px' }}>⚠ Conflict</span>
+                        ? <span style={{ background: '#fdf7f0', color: '#7a4c15', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e8d0aa' }}>⚠ Conflict</span>
                         : ids.length > 0
-                          ? <span style={{ background: '#dcfce7', color: '#166534', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '99px' }}>{ids.length} assigned</span>
-                          : <span style={{ background: '#f3f4f6', color: 'var(--muted)', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '99px' }}>Unassigned</span>}
+                          ? <span style={{ background: '#f3f6f4', color: '#2d5a3d', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', border: '1px solid #ccddd3' }}>{ids.length} assigned</span>
+                          : <span style={{ background: '#f4f4f5', color: '#52525b', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>Unassigned</span>}
                     </div>
                   </div>
 
@@ -362,7 +362,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                   if (!w) return null
                   const conflict = workerConflicts(w.id, selProj.id)
                   return (
-                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '8px' }}>
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '4px' }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -391,7 +391,7 @@ export default function ScheduleClient({ projects, workers, assignments: initial
                 {workerGroups.available.map(w => {
                   const trade = workerTrade(w)
                   return (
-                    <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#f8fafc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+                    <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#f8fafc', border: '1px solid var(--line)', borderRadius: '4px' }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
                         <div style={{ fontSize: '11px', marginTop: '1px' }}>{tradeBadge(trade)}</div>

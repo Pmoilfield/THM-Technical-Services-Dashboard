@@ -128,7 +128,7 @@ export default async function DashboardPage() {
               const exp = new Date(t.expiry_date + 'T00:00:00')
               const daysLeft = Math.floor((exp - new Date().setHours(0,0,0,0)) / 86400000)
               return (
-                <span key={i} style={{ fontSize: '12px', background: '#fff', border: '1px solid #fcd34d', borderRadius: '99px', padding: '2px 10px', fontWeight: 600 }}>
+                <span key={i} style={{ fontSize: '12px', background: '#fff', border: '1px solid #fcd34d', borderRadius: '4px', padding: '2px 8px', fontWeight: 600, border: '1px solid #e8d0aa' }}>
                   {t.workers?.name} — {t.ticket_name}
                   <span style={{ color: '#d97706', marginLeft: '6px' }}>({daysLeft}d)</span>
                 </span>
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
               const exp = new Date(o.expiry_date + 'T00:00:00')
               const daysLeft = Math.floor((exp - new Date().setHours(0,0,0,0)) / 86400000)
               return (
-                <span key={i} style={{ fontSize: '12px', background: '#fff', border: '1px solid #fcd34d', borderRadius: '99px', padding: '2px 10px', fontWeight: 600 }}>
+                <span key={i} style={{ fontSize: '12px', background: '#fff', border: '1px solid #fcd34d', borderRadius: '4px', padding: '2px 8px', fontWeight: 600, border: '1px solid #e8d0aa' }}>
                   {o.workers?.name} — {o.site_name}
                   <span style={{ color: '#d97706', marginLeft: '6px' }}>({daysLeft}d)</span>
                 </span>

@@ -17,7 +17,7 @@ export default function ArchiveButton({ projectId, archived }) {
   }
 
   return (
-    <button onClick={toggle} disabled={loading} className={archived ? 'small' : 'small danger'} style={{ borderRadius: '8px' }}>
+    <button onClick={toggle} disabled={loading} className={archived ? 'small' : 'small danger'}>
       {loading ? '...' : archived ? 'Restore project' : 'Archive'}
     </button>
   )

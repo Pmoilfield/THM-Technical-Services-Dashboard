@@ -256,8 +256,8 @@ export default async function FinancialsPage() {
                       <td>{formatDate(inv.due_date)}</td>
                       <td>
                         <span style={{
-                          fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
-                          background: bucket.color + '20', color: bucket.color,
+                          fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+                          background: '#f4f4f5', color: '#52525b', border: '1px solid #e4e4e7',
                         }}>
                           {inv.daysOverdue <= 0 ? 'Current' : `${inv.daysOverdue}d overdue`}
                         </span>

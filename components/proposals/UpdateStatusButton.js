@@ -18,7 +18,7 @@ export default function UpdateStatusButton({ proposalId, currentStatus }) {
     <select
       value={currentStatus}
       onChange={e => update(e.target.value)}
-      style={{ fontSize: '13px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--line)' }}
+      style={{ fontSize: '13px', padding: '6px 10px' }}
     >
       {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
     </select>
