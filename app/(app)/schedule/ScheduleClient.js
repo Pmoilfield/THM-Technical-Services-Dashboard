@@ -15,6 +15,7 @@ const TRADE_SECTION = {
   'Construction Management': 'Management & Support',
   'Project Management':      'Management & Support',
   'Quality':                 'Management & Support',
+  'Administration':          'Management & Support',
 }
 const SECTION_ORDER = ['Mechanical', 'Weld', 'Electrical', 'Instrumentation', 'Management & Support']
 
@@ -41,9 +42,11 @@ function overlaps(aS, aE, bS, bE) {
   return !(new Date(aE) < new Date(bS) || new Date(bE) < new Date(aS))
 }
 
-function TradeBadge({ trade }) {
+function TradeBadge({ trade, staffed = true }) {
   const parent = trade?.includes(' - ') ? trade.split(' - ')[0] : trade
-  const c = TRADE_COLORS[trade] || TRADE_COLORS[parent] || { bg: '#f3f4f6', color: '#374151' }
+  const c = staffed
+    ? (TRADE_COLORS[trade] || TRADE_COLORS[parent] || { bg: '#f3f4f6', color: '#374151' })
+    : { bg: '#f4f4f5', color: '#a1a1aa' }
   return (
     <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '99px', fontSize: '11px', fontWeight: 700, background: c.bg, color: c.color, whiteSpace: 'nowrap' }}>
       {trade || '—'}
@@ -87,11 +90,11 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   // Rate map: rate_id → category
   const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.personnel ? `${r.category} - ${r.personnel}` : r.category])), [rates])
   const workerTrade = useCallback(w => rateMap[w.default_rate_id] || null, [rateMap])
-  // Build trade groups dynamically from rate categories held by active workers
+  // All trade categories from rates table (always show full list)
   const dynamicTradeGroups = useMemo(() => {
-    const heldTrades = [...new Set(workers.map(w => workerTrade(w)).filter(Boolean))].sort()
+    const allTrades = [...new Set(rates.filter(r => r.category !== 'Equipment').map(r => r.personnel ? `${r.category} - ${r.personnel}` : r.category))].sort()
     const sections = {}
-    for (const trade of heldTrades) {
+    for (const trade of allTrades) {
       const parent  = trade.includes(' - ') ? trade.split(' - ')[0] : trade
       const section = TRADE_SECTION[parent] || 'Other'
       if (!sections[section]) sections[section] = []
@@ -99,7 +102,12 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
     }
     const order = [...SECTION_ORDER, 'Other']
     return order.filter(s => sections[s]).map(s => ({ label: s, trades: sections[s] }))
-  }, [workers, workerTrade])
+  }, [rates])
+
+  // Trades held by real (non-ghost) active workers
+  const staffedTrades = useMemo(() => new Set(
+    workers.filter(w => !/^Ghost \d+$/i.test(w.name)).map(w => workerTrade(w)).filter(Boolean)
+  ), [workers, workerTrade])
 
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
@@ -600,7 +608,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                           const count = req?.headcount || 0
                           return (
                             <div key={trade} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '4px', border: `1px solid ${count > 0 ? '#111' : 'var(--line)'}`, background: count > 0 ? '#f9f9f9' : '#fafafa' }}>
-                              <TradeBadge trade={trade} />
+                              <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
                               <button style={miniBtn} onClick={() => count > 0 && upsertRequirement(selWin.id, trade, count - 1)}>−</button>
                               <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '14px', textAlign: 'center' }}>{count}</span>
                               <button style={miniBtn} onClick={() => upsertRequirement(selWin.id, trade, count + 1)}>+</button>
