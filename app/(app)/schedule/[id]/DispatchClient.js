@@ -198,13 +198,22 @@ export default function DispatchClient({ project, workers, windows: initialWindo
 
   // ── Assignment CRUD ──────────────────────────────────────────────────────────
   async function addAssignment(windowId, workerId, trade) {
-    const { data, error: err } = await supabase.from('crew_window_assignments').insert({ window_id: windowId, worker_id: workerId, trade }).select().single()
+    const win = windows.find(w => w.id === windowId)
+    const { data, error: err } = await supabase
+      .from('crew_window_assignments')
+      .insert({ window_id: windowId, worker_id: workerId, trade, onsite_start: win?.start_date || null, onsite_end: win?.end_date || null })
+      .select().single()
     if (!err && data) setWindowAssignments(prev => [...prev, data])
   }
 
   async function removeAssignment(assignmentId) {
     await supabase.from('crew_window_assignments').delete().eq('id', assignmentId)
     setWindowAssignments(prev => prev.filter(a => a.id !== assignmentId))
+  }
+
+  async function updateAssignmentDate(assignmentId, field, value) {
+    setWindowAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, [field]: value } : a))
+    await supabase.from('crew_window_assignments').update({ [field]: value }).eq('id', assignmentId)
   }
 
   const miniBtn = { background: 'none', border: '1px solid var(--line)', borderRadius: '3px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', lineHeight: 1, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
@@ -357,51 +366,68 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                   )}
                   {winReqs.map(req => {
                     const { trade, headcount: count } = req
-                    const assigned       = winAssignments.filter(a => a.trade === trade)
-                    const assignedWorkers = assigned.map(a => ({ ...workers.find(w => w.id === a.worker_id), assignmentId: a.id })).filter(w => w?.id)
-                    const isSelected     = selectedTrade === trade
+                    const assigned        = winAssignments.filter(a => a.trade === trade)
+                    const assignedWorkers = assigned.map(a => ({
+                      ...workers.find(w => w.id === a.worker_id),
+                      assignmentId: a.id,
+                      onsite_start: a.onsite_start,
+                      onsite_end:   a.onsite_end,
+                    })).filter(w => w?.id)
+                    const isSelected = selectedTrade === trade
                     return (
                       <div
                         key={trade}
                         onClick={() => setSelectedTrade(isSelected ? null : trade)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px',
+                          display: 'flex', flexDirection: 'column', gap: '6px', padding: '8px 10px',
                           borderRadius: '6px', cursor: 'pointer',
                           background: isSelected ? '#f0f4ff' : '#fafafa',
                           border: `1px solid ${isSelected ? '#93c5fd' : '#e4e4e7'}`,
                         }}
                       >
-                        {/* Count controls */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                          <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count - 1) }}>−</button>
-                          <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
-                          <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count + 1) }}>+</button>
-                        </div>
-                        {/* Trade badge */}
-                        <div style={{ minWidth: '180px' }}>
+                        {/* Trade header row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                            <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count - 1) }}>−</button>
+                            <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
+                            <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count + 1) }}>+</button>
+                          </div>
                           <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
                         </div>
-                        {/* Assigned worker chips */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', flex: 1 }}>
-                          {assignedWorkers.map(w => (
-                            <span
-                              key={w.id}
-                              onClick={e => { e.stopPropagation(); removeAssignment(w.assignmentId) }}
-                              title="Click to remove"
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                fontSize: '12px', fontWeight: 600, padding: '2px 8px',
-                                background: w.conflict ? '#fffbeb' : '#fff',
-                                border: `1px solid ${w.conflict ? '#fde68a' : '#e4e4e7'}`,
-                                borderRadius: '99px', cursor: 'pointer', whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {w.name}
-                              {w.conflict && <span style={{ color: '#d97706', fontSize: '10px' }}>⚠</span>}
-                              <span style={{ color: '#aaa', fontSize: '10px' }}>×</span>
-                            </span>
-                          ))}
-                        </div>
+
+                        {/* Assigned worker rows with editable dates */}
+                        {assignedWorkers.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '72px' }}>
+                            {assignedWorkers.map(w => (
+                              <div key={w.id} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 600, minWidth: '130px' }}>
+                                  {w.name}
+                                  {w.conflict && <span style={{ color: '#d97706', fontSize: '10px', marginLeft: '4px' }}>⚠</span>}
+                                </span>
+                                <input
+                                  key={w.assignmentId + '-s'}
+                                  type="date"
+                                  defaultValue={w.onsite_start || selWin?.start_date || ''}
+                                  onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_start', e.target.value)}
+                                  style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }}
+                                />
+                                <span style={{ fontSize: '11px', color: 'var(--muted)' }}>→</span>
+                                <input
+                                  key={w.assignmentId + '-e'}
+                                  type="date"
+                                  defaultValue={w.onsite_end || selWin?.end_date || ''}
+                                  onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_end', e.target.value)}
+                                  style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }}
+                                />
+                                <button
+                                  onClick={() => removeAssignment(w.assignmentId)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px', lineHeight: 1, padding: '0 2px' }}
+                                  title="Remove"
+                                >×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
