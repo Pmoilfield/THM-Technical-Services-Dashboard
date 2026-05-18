@@ -76,6 +76,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   const [saving,            setSaving]            = useState(false)
   const [error,             setError]             = useState('')
   const [search,            setSearch]            = useState('')
+  const [viewMode,          setViewMode]          = useState('month')
 
   // Rate map: rate_id → category
   const rateMap    = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
@@ -83,6 +84,11 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
 
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
+    if (viewMode === 'week') {
+      const start = new Date(Date.now() - 21 * 86400000).toISOString().split('T')[0]
+      const end   = new Date(Date.now() + 70 * 86400000).toISOString().split('T')[0]
+      return { spanStart: start, spanEnd: end, spanMs: ms(end) - ms(start) }
+    }
     const valid = projects.filter(p => p.start_date)
     if (!valid.length) { const t = todayStr(); return { spanStart: t, spanEnd: t, spanMs: 1 } }
     const s = Math.min(...valid.map(p => ms(p.start_date)))
@@ -92,22 +98,46 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
       spanEnd:   new Date(e + 14 * 86400000).toISOString().split('T')[0],
       spanMs:    (e + 14 * 86400000) - (s - 14 * 86400000),
     }
-  }, [projects])
+  }, [projects, viewMode])
 
   const pct  = d      => d ? Math.max(0, ((ms(d) - ms(spanStart)) / spanMs) * 100) : 0
   const pctW = (s, e) => s && e ? Math.max(0.5, ((ms(e) - ms(s)) / spanMs) * 100) : 0.5
 
-  const monthMarks = useMemo(() => {
+  const timeMarks = useMemo(() => {
     const marks = []
-    let d = new Date(new Date(spanStart).getFullYear(), new Date(spanStart).getMonth(), 1)
-    const end = new Date(spanEnd)
-    while (d <= end) {
-      const p = ((d.getTime() - ms(spanStart)) / spanMs) * 100
-      if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', year: '2-digit' }), pct: p })
-      d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    if (viewMode === 'week') {
+      // weekly ticks — advance to first Monday on or after spanStart
+      let d = new Date(spanStart + 'T00:00:00')
+      while (d.getDay() !== 1) d = new Date(d.getTime() + 86400000)
+      const end = new Date(spanEnd + 'T00:00:00')
+      while (d <= end) {
+        const p = ((d.getTime() - ms(spanStart)) / spanMs) * 100
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
+        d = new Date(d.getTime() + 7 * 86400000)
+      }
+    } else if (viewMode === 'quarter') {
+      const qMonths = [0, 3, 6, 9]
+      let year = new Date(spanStart).getFullYear() - 1
+      const endYear = new Date(spanEnd).getFullYear() + 1
+      while (year <= endYear) {
+        for (const m of qMonths) {
+          const d = new Date(year, m, 1)
+          const p = ((d.getTime() - ms(spanStart)) / spanMs) * 100
+          if (p >= 0 && p <= 100) marks.push({ label: `Q${Math.floor(m / 3) + 1} '${String(year).slice(2)}`, pct: p })
+        }
+        year++
+      }
+    } else {
+      let d = new Date(new Date(spanStart).getFullYear(), new Date(spanStart).getMonth(), 1)
+      const end = new Date(spanEnd)
+      while (d <= end) {
+        const p = ((d.getTime() - ms(spanStart)) / spanMs) * 100
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', year: '2-digit' }), pct: p })
+        d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+      }
     }
     return marks
-  }, [spanStart, spanEnd, spanMs])
+  }, [spanStart, spanEnd, spanMs, viewMode])
 
   // ── Stats helpers ──────────────────────────────────────────────────────────
   function windowStats(windowId) {
@@ -282,7 +312,20 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
       {/* ── Gantt ── */}
       <section className="panel" style={{ overflow: 'hidden' }}>
         <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 700 }}>Manpower Loading</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700 }}>Manpower Loading</h2>
+            <div style={{ display: 'flex', gap: '3px', background: '#f4f4f5', borderRadius: '6px', padding: '2px' }}>
+              {[['week','Week'],['month','Month'],['quarter','Quarter']].map(([v, label]) => (
+                <button key={v} onClick={() => setViewMode(v)} style={{
+                  fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer',
+                  background: viewMode === v ? '#fff' : 'transparent',
+                  color: viewMode === v ? '#111' : '#71717a',
+                  boxShadow: viewMode === v ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                  transition: 'all 0.15s',
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
           {selectedProject && <button className="small" onClick={() => { setSelectedProject(null); setSelectedWindow(null) }}>Clear selection</button>}
         </div>
 
@@ -291,7 +334,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', padding: '0 14px', borderBottom: '1px solid var(--line)', background: '#f8fafc', minHeight: '26px' }}>
             <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>Project</div>
             <div style={{ position: 'relative', minWidth: '700px', height: '26px' }}>
-              {monthMarks.map(m => (
+              {timeMarks.map(m => (
                 <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
                   <div style={{ width: '1px', height: '100%', background: 'var(--line)' }} />
                   <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', paddingLeft: '3px', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{m.label}</span>
