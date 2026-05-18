@@ -10,7 +10,9 @@ export default async function SchedulePage() {
   const [
     { data: projects },
     { data: workers },
-    { data: assignments },
+    { data: windows },
+    { data: requirements },
+    { data: windowAssignments },
     { data: holidays },
     { data: rates },
   ] = await Promise.all([
@@ -23,12 +25,19 @@ export default async function SchedulePage() {
       .order('start_date', { ascending: true }),
     supabase
       .from('workers')
-      .select('id, name, active, default_rate_id')
+      .select('id, name, active, default_rate_id, worker_certifications(id, cert_type, expiry_date)')
       .eq('active', true)
       .order('name'),
     supabase
-      .from('project_assignments')
-      .select('id, project_id, worker_id, trade, notes'),
+      .from('project_crew_windows')
+      .select('*')
+      .order('start_date'),
+    supabase
+      .from('crew_window_requirements')
+      .select('*'),
+    supabase
+      .from('crew_window_assignments')
+      .select('*'),
     supabase
       .from('worker_holidays')
       .select('id, worker_id, start_date, end_date, description'),
@@ -42,7 +51,9 @@ export default async function SchedulePage() {
     <ScheduleClient
       projects={projects || []}
       workers={workers || []}
-      assignments={assignments || []}
+      windows={windows || []}
+      requirements={requirements || []}
+      windowAssignments={windowAssignments || []}
       holidays={holidays || []}
       rates={rates || []}
     />
