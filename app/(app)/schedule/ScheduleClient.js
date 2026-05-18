@@ -85,7 +85,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   const [viewMode,          setViewMode]          = useState('month')
 
   // Rate map: rate_id → category
-  const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
+  const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.personnel ? `${r.category} - ${r.personnel}` : r.category])), [rates])
   const workerTrade = useCallback(w => rateMap[w.default_rate_id] || null, [rateMap])
   // Build trade groups dynamically from rate categories held by active workers
   const dynamicTradeGroups = useMemo(() => {

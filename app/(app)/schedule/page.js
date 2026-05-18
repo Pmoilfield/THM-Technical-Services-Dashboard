@@ -43,7 +43,7 @@ export default async function SchedulePage() {
       .select('id, worker_id, start_date, end_date, description'),
     supabase
       .from('rates')
-      .select('id, category')
+      .select('id, category, personnel')
       .not('category', 'eq', 'Equipment'),
   ])
 
