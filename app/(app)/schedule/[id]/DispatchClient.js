@@ -218,6 +218,33 @@ export default function DispatchClient({ project, workers, windows: initialWindo
 
   const miniBtn = { background: 'none', border: '1px solid var(--line)', borderRadius: '3px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', lineHeight: 1, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
 
+  // ── Gantt helpers ─────────────────────────────────────────────────────────────
+  const ganttSpan = useMemo(() => {
+    const dates = windows.flatMap(w => [w.start_date, w.end_date].filter(Boolean))
+    if (!dates.length) return null
+    const minMs = Math.min(...dates.map(d => ms(d))) - 3 * 86400000
+    const maxMs = Math.max(...dates.map(d => ms(d))) + 3 * 86400000
+    return { start: new Date(minMs).toISOString().split('T')[0], end: new Date(maxMs).toISOString().split('T')[0], spanMs: maxMs - minMs }
+  }, [windows])
+
+  const gpct  = d      => ganttSpan ? Math.max(0, ((ms(d) - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100) : 0
+  const gpctW = (s, e) => ganttSpan ? Math.max(1,  ((ms(e) - ms(s))             / ganttSpan.spanMs) * 100) : 1
+
+  const ganttMarks = useMemo(() => {
+    if (!ganttSpan) return []
+    const marks = []
+    let d = new Date(new Date(ganttSpan.start).getFullYear(), new Date(ganttSpan.start).getMonth(), 1)
+    const end = new Date(ganttSpan.end)
+    while (d <= end) {
+      const p = ((d.getTime() - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100
+      if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    }
+    return marks
+  }, [ganttSpan])
+
+  const todayStr = new Date().toISOString().split('T')[0]
+
   return (
     <div className="grid">
 
@@ -225,300 +252,272 @@ export default function DispatchClient({ project, workers, windows: initialWindo
       <div className="page-header">
         <div className="split">
           <div>
-            <button
-              onClick={() => router.push('/schedule')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '13px', fontWeight: 600, padding: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
+            <button onClick={() => router.push('/schedule')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '13px', fontWeight: 600, padding: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
               ← Schedule
             </button>
             <h1>{project.name}</h1>
-            <p className="muted">
-              {[project.internal_job_no, project.client_name, project.location, `${fmt(project.start_date)} – ${fmt(project.end_date)}`].filter(Boolean).join(' · ')}
-            </p>
+            <p className="muted">{[project.internal_job_no, project.client_name, project.location, `${fmt(project.start_date)} – ${fmt(project.end_date)}`].filter(Boolean).join(' · ')}</p>
           </div>
-          <button className="primary" onClick={() => { setSelectedWindow(null); setAddingWindow(true) }}>+ Add Window</button>
+          <button className="primary" onClick={() => setAddingWindow(true)}>+ Add Window</button>
         </div>
       </div>
 
-      {/* ── Window tabs ── */}
-      <section className="panel" style={{ overflow: 'hidden' }}>
-        {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', overflowX: 'auto' }}>
-          {windows.map((win, idx) => {
-            const stats   = windowStats(win)
-            const isActive = win.id === selectedWindow && !addingWindow
-            const dot     = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
-            return (
-              <button
-                key={win.id}
-                onClick={() => { setSelectedWindow(win.id); setAddingWindow(false); setSelectedTrade(null); setWorkerSearch('') }}
-                style={{
-                  background: 'none', border: 'none', padding: '12px 20px', cursor: 'pointer', whiteSpace: 'nowrap',
-                  borderBottom: isActive ? '2px solid #111' : '2px solid transparent', borderRadius: 0,
-                  fontWeight: isActive ? 700 : 500, fontSize: '13px', color: isActive ? '#111' : 'var(--muted)',
-                }}
-              >
-                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: dot, marginRight: '6px' }} />
-                {win.description || `Window ${idx + 1}`}
-                <span style={{ fontSize: '11px', color: 'var(--muted)', marginLeft: '8px' }}>{fmt(win.start_date)} – {fmt(win.end_date)}</span>
-                <span style={{ fontSize: '11px', marginLeft: '8px', color: stats.open > 0 ? '#d97706' : stats.required > 0 ? '#16a34a' : 'var(--muted)' }}>
-                  {stats.assigned}/{stats.required}
-                </span>
-              </button>
-            )
-          })}
-          {addingWindow && (
-            <button style={{ background: 'none', border: 'none', padding: '12px 20px', fontWeight: 700, fontSize: '13px', color: '#111', borderBottom: '2px solid #111', borderRadius: 0, whiteSpace: 'nowrap' }}>
-              New Window…
-            </button>
-          )}
-          {windows.length === 0 && !addingWindow && (
-            <div style={{ padding: '12px 20px', fontSize: '13px', color: 'var(--muted)' }}>No windows yet — click "+ Add Window" to get started.</div>
-          )}
-        </div>
-
-        {/* Add window form */}
-        {addingWindow && (
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', background: '#f8fafc' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 160px auto auto', gap: '10px', alignItems: 'end' }}>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                Description (optional)
-                <input value={newWin.description} onChange={e => setNewWin(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Phase 1 – Mechanical, Commissioning…" style={{ marginTop: '4px' }} />
-              </label>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                Start Date
-                <input type="date" value={newWin.start_date} onChange={e => setNewWin(p => ({ ...p, start_date: e.target.value }))} style={{ marginTop: '4px' }} />
-              </label>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                End Date
-                <input type="date" value={newWin.end_date} min={newWin.start_date} onChange={e => setNewWin(p => ({ ...p, end_date: e.target.value }))} style={{ marginTop: '4px' }} />
-              </label>
-              <button className="primary" onClick={saveWindow} disabled={saving} style={{ marginBottom: '1px' }}>{saving ? 'Saving…' : 'Save'}</button>
-              <button onClick={() => { setAddingWindow(false); setError('') }} style={{ marginBottom: '1px' }}>Cancel</button>
-            </div>
-            {error && <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>{error}</p>}
-          </div>
-        )}
-
-        {/* Window detail */}
-        {selWin && !addingWindow && (
-          <div key={selWin.id} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-
-            {/* Edit dates */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 160px auto', gap: '10px', alignItems: 'end' }}>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                Description
-                <input defaultValue={selWin.description || ''} onBlur={e => updateWindow(selWin.id, 'description', e.target.value)} placeholder="e.g. Phase 1" style={{ marginTop: '4px' }} />
-              </label>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                Start Date
-                <input type="date" defaultValue={selWin.start_date} onBlur={e => updateWindow(selWin.id, 'start_date', e.target.value)} style={{ marginTop: '4px' }} />
-              </label>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>
-                End Date
-                <input type="date" defaultValue={selWin.end_date} onBlur={e => updateWindow(selWin.id, 'end_date', e.target.value)} style={{ marginTop: '4px' }} />
-              </label>
-              <button className="small" style={{ color: '#111', borderColor: '#e4e4e7', marginBottom: '1px' }} onClick={() => deleteWindow(selWin.id)}>Delete Window</button>
-            </div>
-
-            {/* Trade rows + worker assignment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
-
-              {/* Left: manpower required */}
-              <div>
-                <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
-
-                {/* Dropdown to add a trade */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  <select
-                    id="trade-select"
-                    defaultValue=""
-                    style={{ flex: 1, fontSize: '13px' }}
-                  >
-                    <option value="" disabled>Select a position…</option>
-                    {dynamicTradeGroups.map(group => (
-                      <optgroup key={group.label} label={group.label}>
-                        {group.trades.map(trade => (
-                          <option key={trade} value={trade} disabled={!staffedTrades.has(trade)}>
-                            {trade}{!staffedTrades.has(trade) ? ' — no staff' : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <button
-                    className="small primary"
-                    onClick={() => {
-                      const sel = document.getElementById('trade-select')
-                      const trade = sel?.value
-                      if (!trade) return
-                      const existing = winReqs.find(r => r.trade === trade)
-                      upsertRequirement(selWin.id, trade, (existing?.headcount || 0) + 1)
-                      sel.value = ''
-                    }}
-                  >+ Add</button>
-                </div>
-
-                {/* Active trade rows — only trades with headcount > 0 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {winReqs.length === 0 && (
-                    <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>No positions added yet.</p>
-                  )}
-                  {winReqs.map(req => {
-                    const { trade, headcount: count } = req
-                    const assigned        = winAssignments.filter(a => a.trade === trade)
-                    const assignedWorkers = assigned.map(a => ({
-                      ...workers.find(w => w.id === a.worker_id),
-                      assignmentId: a.id,
-                      onsite_start: a.onsite_start,
-                      onsite_end:   a.onsite_end,
-                    })).filter(w => w?.id)
-                    const isSelected = selectedTrade === trade
-                    return (
-                      <div
-                        key={trade}
-                        onClick={() => setSelectedTrade(isSelected ? null : trade)}
-                        style={{
-                          display: 'flex', flexDirection: 'column', gap: '0', padding: '6px 10px',
-                          borderRadius: '6px', cursor: 'pointer',
-                          background: isSelected ? '#f0f4ff' : '#fafafa',
-                          border: `1px solid ${isSelected ? '#93c5fd' : '#e4e4e7'}`,
-                        }}
-                      >
-                        {/* Single row: controls · badge · [worker name · dates · ×] per assigned */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                            <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count - 1) }}>−</button>
-                            <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
-                            <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count + 1) }}>+</button>
-                          </div>
-                          <div style={{ flexShrink: 0 }}>
-                            <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
-                          </div>
-                          {assignedWorkers.map(w => (
-                            <div key={w.id} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                {w.name}
-                                {w.conflict && <span style={{ color: '#d97706', fontSize: '10px', marginLeft: '4px' }}>⚠</span>}
-                              </span>
-                              <input
-                                key={w.assignmentId + '-s'}
-                                type="date"
-                                defaultValue={w.onsite_start || selWin?.start_date || ''}
-                                onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_start', e.target.value)}
-                                style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }}
-                              />
-                              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>→</span>
-                              <input
-                                key={w.assignmentId + '-e'}
-                                type="date"
-                                defaultValue={w.onsite_end || selWin?.end_date || ''}
-                                onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_end', e.target.value)}
-                                style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }}
-                              />
-                              <button
-                                onClick={() => removeAssignment(w.assignmentId)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px', lineHeight: 1, padding: '0 2px' }}
-                                title="Remove"
-                              >×</button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+      {/* ── Gantt strip ── */}
+      {ganttSpan && windows.length > 0 && (
+        <section className="panel" style={{ padding: '12px 20px 16px', overflow: 'hidden' }}>
+          {/* Date axis */}
+          <div style={{ position: 'relative', height: '18px', marginBottom: '6px' }}>
+            {ganttMarks.map(m => (
+              <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+                <div style={{ width: '1px', height: '100%', background: 'var(--line)' }} />
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', paddingLeft: '3px', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{m.label}</span>
               </div>
+            ))}
+          </div>
+          {/* Bars */}
+          <div style={{ position: 'relative', height: '28px' }}>
+            {/* Today line */}
+            <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#111', zIndex: 10, borderRadius: '2px', pointerEvents: 'none' }} />
+            {windows.map(win => {
+              const stats    = windowStats(win)
+              const color    = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
+              const isActive = win.id === selectedWindow
+              return (
+                <div
+                  key={win.id}
+                  onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
+                  title={`${win.description || 'Window'} · ${fmt(win.start_date)} – ${fmt(win.end_date)} · ${stats.assigned}/${stats.required}`}
+                  style={{
+                    position: 'absolute', top: '6px', height: '16px',
+                    left: gpct(win.start_date) + '%',
+                    width: gpctW(win.start_date, win.end_date) + '%',
+                    background: color, borderRadius: '4px', cursor: 'pointer', minWidth: '6px',
+                    outline: isActive ? '2px solid #111' : 'none', outlineOffset: '2px',
+                    transition: 'outline 0.1s',
+                  }}
+                />
+              )
+            })}
+          </div>
+        </section>
+      )}
 
-              {/* Right: available workers */}
-              <div style={{ borderLeft: '1px solid var(--line)', paddingLeft: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', margin: 0 }}>
-                    Available — {workerGroups.available.length}
-                  </h4>
-                  {selectedTrade && <TradeBadge trade={selectedTrade} staffed={staffedTrades.has(selectedTrade)} />}
-                </div>
-                <div style={{ position: 'relative', marginBottom: '8px' }}>
-                  <input
-                    value={workerSearch}
-                    onChange={e => setWorkerSearch(e.target.value)}
-                    placeholder="Search name or trade…"
-                    style={{ width: '100%', paddingRight: workerSearch ? '28px' : undefined, fontSize: '13px', boxSizing: 'border-box' }}
-                  />
-                  {workerSearch && (
-                    <button
-                      onClick={() => setWorkerSearch('')}
-                      style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '14px', lineHeight: 1, padding: 0 }}
-                    >×</button>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '500px', overflowY: 'auto' }}>
-                  {[...workerGroups.available].filter(w => {
-                    if (!workerSearch) return true
-                    const q = workerSearch.toLowerCase()
-                    return w.name.toLowerCase().includes(q) || (workerTrade(w) || '').toLowerCase().includes(q)
-                  }).sort((a, b) => {
-                    if (!selectedTrade) return 0
-                    return (workerTrade(a) === selectedTrade ? 0 : 1) - (workerTrade(b) === selectedTrade ? 0 : 1)
-                  }).map(w => {
-                    const certs = w.worker_certifications || []
-                    return (
-                      <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#f8fafc', border: '1px solid var(--line)', borderRadius: '6px' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
-                            <TradeBadge trade={workerTrade(w)} staffed={true} />
-                            {certs.map(c => <CertBadge key={c.id} cert={c} />)}
-                          </div>
-                        </div>
-                        <button className="small primary" onClick={async () => {
-                          const trade = workerTrade(w)
-                          if (trade) {
-                            const req = winReqs.find(r => r.trade === trade)
-                            await upsertRequirement(selWin.id, trade, (req?.headcount || 0) + 1)
-                          }
-                          addAssignment(selWin.id, w.id, trade)
-                        }}>+ Add</button>
-                      </div>
-                    )
-                  })}
+      {/* ── Add window form ── */}
+      {addingWindow && (
+        <section className="panel" style={{ padding: '16px 20px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>New Crew Window</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 160px auto auto', gap: '10px', alignItems: 'end' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600 }}>
+              Description (optional)
+              <input value={newWin.description} onChange={e => setNewWin(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Phase 1 – Mechanical" style={{ marginTop: '4px' }} />
+            </label>
+            <label style={{ fontSize: '12px', fontWeight: 600 }}>
+              Start Date
+              <input type="date" value={newWin.start_date} onChange={e => setNewWin(p => ({ ...p, start_date: e.target.value }))} style={{ marginTop: '4px' }} />
+            </label>
+            <label style={{ fontSize: '12px', fontWeight: 600 }}>
+              End Date
+              <input type="date" value={newWin.end_date} min={newWin.start_date} onChange={e => setNewWin(p => ({ ...p, end_date: e.target.value }))} style={{ marginTop: '4px' }} />
+            </label>
+            <button className="primary" onClick={saveWindow} disabled={saving} style={{ marginBottom: '1px' }}>{saving ? 'Saving…' : 'Save'}</button>
+            <button onClick={() => { setAddingWindow(false); setError('') }} style={{ marginBottom: '1px' }}>Cancel</button>
+          </div>
+          {error && <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>{error}</p>}
+        </section>
+      )}
 
-                  {workerGroups.unavailable.length > 0 && (
-                    <>
-                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', padding: '8px 0 4px', borderTop: '1px solid var(--line)', marginTop: '4px' }}>
-                        Unavailable — {workerGroups.unavailable.length}
-                      </div>
-                      {workerGroups.unavailable.map(w => {
-                        const certs = w.worker_certifications || []
+      {/* ── No windows ── */}
+      {windows.length === 0 && !addingWindow && (
+        <section className="panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
+          No crew windows yet — click "+ Add Window" to get started.
+        </section>
+      )}
+
+      {/* ── Accordion window cards ── */}
+      {windows.map(win => {
+        const stats      = windowStats(win)
+        const dot        = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
+        const isExpanded = win.id === selectedWindow
+
+        return (
+          <section key={win.id} className="panel" style={{ overflow: 'hidden' }}>
+
+            {/* Card header */}
+            <div
+              onClick={() => { setSelectedWindow(isExpanded ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px', cursor: 'pointer', userSelect: 'none', borderBottom: isExpanded ? '1px solid var(--line)' : 'none' }}
+            >
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: dot, flexShrink: 0, display: 'inline-block' }} />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontWeight: 700, fontSize: '14px' }}>{win.description || 'Unnamed Window'}</span>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '10px' }}>{fmt(win.start_date)} – {fmt(win.end_date)}</span>
+              </div>
+              <span style={{
+                fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
+                background: stats.open > 0 ? '#fef3c7' : stats.required > 0 ? '#dcfce7' : '#f4f4f5',
+                color:      stats.open > 0 ? '#92400e' : stats.required > 0 ? '#166534' : '#71717a',
+              }}>
+                {stats.assigned}/{stats.required} dispatched
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '4px' }}>{isExpanded ? '▲' : '▼'}</span>
+            </div>
+
+            {/* Expanded body */}
+            {isExpanded && (
+              <div key={win.id} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* Edit fields */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 160px auto', gap: '10px', alignItems: 'end' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>
+                    Description
+                    <input defaultValue={win.description || ''} onBlur={e => updateWindow(win.id, 'description', e.target.value)} placeholder="e.g. Phase 1" style={{ marginTop: '4px' }} />
+                  </label>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>
+                    Start Date
+                    <input type="date" defaultValue={win.start_date} onBlur={e => updateWindow(win.id, 'start_date', e.target.value)} style={{ marginTop: '4px' }} />
+                  </label>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>
+                    End Date
+                    <input type="date" defaultValue={win.end_date} onBlur={e => updateWindow(win.id, 'end_date', e.target.value)} style={{ marginTop: '4px' }} />
+                  </label>
+                  <button className="small" style={{ color: '#111', borderColor: '#e4e4e7', marginBottom: '1px' }} onClick={() => deleteWindow(win.id)}>Delete</button>
+                </div>
+
+                {/* Manpower + Available */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
+
+                  {/* Left: manpower required */}
+                  <div>
+                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                      <select id={`trade-select-${win.id}`} defaultValue="" style={{ flex: 1, fontSize: '13px' }}>
+                        <option value="" disabled>Select a position…</option>
+                        {dynamicTradeGroups.map(group => (
+                          <optgroup key={group.label} label={group.label}>
+                            {group.trades.map(trade => (
+                              <option key={trade} value={trade} disabled={!staffedTrades.has(trade)}>
+                                {trade}{!staffedTrades.has(trade) ? ' — no staff' : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                      <button className="small primary" onClick={() => {
+                        const sel = document.getElementById(`trade-select-${win.id}`)
+                        const trade = sel?.value
+                        if (!trade) return
+                        const existing = winReqs.find(r => r.trade === trade)
+                        upsertRequirement(win.id, trade, (existing?.headcount || 0) + 1)
+                        sel.value = ''
+                      }}>+ Add</button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {winReqs.length === 0 && <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>No positions added yet.</p>}
+                      {winReqs.map(req => {
+                        const { trade, headcount: count } = req
+                        const assigned        = winAssignments.filter(a => a.trade === trade)
+                        const assignedWorkers = assigned.map(a => ({
+                          ...workers.find(w => w.id === a.worker_id),
+                          assignmentId: a.id, onsite_start: a.onsite_start, onsite_end: a.onsite_end,
+                        })).filter(w => w?.id)
+                        const isSelected = selectedTrade === trade
                         return (
-                          <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', opacity: 0.85 }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
-                                <TradeBadge trade={workerTrade(w)} staffed={true} />
-                                {certs.map(c => <CertBadge key={c.id} cert={c} />)}
-                                <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {w.conflict}</span>
-                              </div>
+                          <div key={trade} onClick={() => setSelectedTrade(isSelected ? null : trade)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: isSelected ? '#f0f4ff' : '#fafafa', border: `1px solid ${isSelected ? '#93c5fd' : '#e4e4e7'}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                              <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(win.id, trade, count - 1) }}>−</button>
+                              <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
+                              <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(win.id, trade, count + 1) }}>+</button>
                             </div>
-                            <button className="small" onClick={async () => {
-                              const trade = workerTrade(w)
-                              if (trade) {
-                                const req = winReqs.find(r => r.trade === trade)
-                                await upsertRequirement(selWin.id, trade, (req?.headcount || 0) + 1)
-                              }
-                              addAssignment(selWin.id, w.id, trade)
-                            }} title="Add anyway">Add anyway</button>
+                            <div style={{ flexShrink: 0 }}><TradeBadge trade={trade} staffed={staffedTrades.has(trade)} /></div>
+                            {assignedWorkers.map(w => (
+                              <div key={w.id} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  {w.name}{w.conflict && <span style={{ color: '#d97706', fontSize: '10px', marginLeft: '4px' }}>⚠</span>}
+                                </span>
+                                <input key={w.assignmentId + '-s'} type="date" defaultValue={w.onsite_start || win.start_date || ''} onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_start', e.target.value)} style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }} />
+                                <span style={{ fontSize: '11px', color: 'var(--muted)' }}>→</span>
+                                <input key={w.assignmentId + '-e'} type="date" defaultValue={w.onsite_end || win.end_date || ''} onBlur={e => updateAssignmentDate(w.assignmentId, 'onsite_end', e.target.value)} style={{ fontSize: '11px', padding: '2px 5px', width: '126px' }} />
+                                <button onClick={() => removeAssignment(w.assignmentId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px', lineHeight: 1, padding: '0 2px' }} title="Remove">×</button>
+                              </div>
+                            ))}
                           </div>
                         )
                       })}
-                    </>
-                  )}
+                    </div>
+                  </div>
+
+                  {/* Right: available workers */}
+                  <div style={{ borderLeft: '1px solid var(--line)', paddingLeft: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', margin: 0 }}>
+                        Available — {workerGroups.available.length}
+                      </h4>
+                      {selectedTrade && <TradeBadge trade={selectedTrade} staffed={staffedTrades.has(selectedTrade)} />}
+                    </div>
+                    <div style={{ position: 'relative', marginBottom: '8px' }}>
+                      <input value={workerSearch} onChange={e => setWorkerSearch(e.target.value)} placeholder="Search name or trade…" style={{ width: '100%', paddingRight: workerSearch ? '28px' : undefined, fontSize: '13px', boxSizing: 'border-box' }} />
+                      {workerSearch && <button onClick={() => setWorkerSearch('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '14px', lineHeight: 1, padding: 0 }}>×</button>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '500px', overflowY: 'auto' }}>
+                      {[...workerGroups.available].filter(w => {
+                        if (!workerSearch) return true
+                        const q = workerSearch.toLowerCase()
+                        return w.name.toLowerCase().includes(q) || (workerTrade(w) || '').toLowerCase().includes(q)
+                      }).sort((a, b) => (workerTrade(a) === selectedTrade ? 0 : 1) - (workerTrade(b) === selectedTrade ? 0 : 1))
+                        .map(w => {
+                          const certs = w.worker_certifications || []
+                          return (
+                            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#f8fafc', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
+                                  <TradeBadge trade={workerTrade(w)} staffed={true} />
+                                  {certs.map(c => <CertBadge key={c.id} cert={c} />)}
+                                </div>
+                              </div>
+                              <button className="small primary" onClick={async () => {
+                                const trade = workerTrade(w)
+                                if (trade) { const req = winReqs.find(r => r.trade === trade); await upsertRequirement(win.id, trade, (req?.headcount || 0) + 1) }
+                                addAssignment(win.id, w.id, trade)
+                              }}>+ Add</button>
+                            </div>
+                          )
+                        })}
+                      {workerGroups.unavailable.length > 0 && (
+                        <>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', padding: '8px 0 4px', borderTop: '1px solid var(--line)', marginTop: '4px' }}>
+                            Unavailable — {workerGroups.unavailable.length}
+                          </div>
+                          {workerGroups.unavailable.map(w => {
+                            const certs = w.worker_certifications || []
+                            return (
+                              <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', opacity: 0.85 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
+                                    <TradeBadge trade={workerTrade(w)} staffed={true} />
+                                    {certs.map(c => <CertBadge key={c.id} cert={c} />)}
+                                    <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {w.conflict}</span>
+                                  </div>
+                                </div>
+                                <button className="small" onClick={async () => {
+                                  const trade = workerTrade(w)
+                                  if (trade) { const req = winReqs.find(r => r.trade === trade); await upsertRequirement(win.id, trade, (req?.headcount || 0) + 1) }
+                                  addAssignment(win.id, w.id, trade)
+                                }} title="Add anyway">Add anyway</button>
+                              </div>
+                            )
+                          })}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-      </section>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }
