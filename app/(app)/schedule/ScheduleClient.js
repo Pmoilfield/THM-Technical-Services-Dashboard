@@ -79,8 +79,10 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   const [viewMode,          setViewMode]          = useState('month')
 
   // Rate map: rate_id → category
-  const rateMap    = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
+  const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
   const workerTrade = useCallback(w => rateMap[w.default_rate_id] || null, [rateMap])
+  // Only show trades that at least one active worker actually holds
+  const activeTrades = useMemo(() => new Set(workers.map(w => workerTrade(w)).filter(Boolean)), [workers, workerTrade])
 
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
@@ -572,11 +574,14 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
               <div>
                 <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {TRADE_GROUPS.map(group => (
+                  {TRADE_GROUPS.map(group => {
+                    const visibleTrades = group.trades.filter(t => activeTrades.has(t))
+                    if (!visibleTrades.length) return null
+                    return (
                     <div key={group.label}>
                       <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '6px' }}>{group.label}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {group.trades.map(trade => {
+                        {visibleTrades.map(trade => {
                           const req   = winReqs.find(r => r.trade === trade)
                           const count = req?.headcount || 0
                           return (
@@ -590,7 +595,8 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                         })}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
