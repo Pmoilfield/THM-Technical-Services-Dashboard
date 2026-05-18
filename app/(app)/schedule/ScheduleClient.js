@@ -1,36 +1,7 @@
 'use client'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-// Section ordering — parent trade → display section
-const TRADE_SECTION = {
-  'Pipefitter':              'Mechanical',
-  'Labourer':                'Mechanical',
-  'Operator':                'Mechanical',
-  'Weld':                    'Weld',
-  'Welder':                  'Weld',
-  'Electrical':              'Electrical',
-  'Instrumentation':         'Instrumentation',
-  'Construction Management': 'Management & Support',
-  'Project Management':      'Management & Support',
-  'Quality':                 'Management & Support',
-  'Administration':          'Management & Support',
-}
-const SECTION_ORDER = ['Mechanical', 'Weld', 'Electrical', 'Instrumentation', 'Management & Support']
-
-const TRADE_COLORS = {
-  'Electrical':              { bg: '#dbeafe', color: '#1e40af' },
-  'Instrumentation':         { bg: '#f3e8ff', color: '#6d28d9' },
-  'Pipefitter':              { bg: '#dcfce7', color: '#166534' },
-  'Construction Management': { bg: '#fef3c7', color: '#92400e' },
-  'Project Management':      { bg: '#fef3c7', color: '#92400e' },
-  'Labourer':                { bg: '#f3f4f6', color: '#374151' },
-  'Operator':                { bg: '#f3f4f6', color: '#374151' },
-  'Weld':                    { bg: '#f4f4f5', color: '#374151' },
-  'Welder':                  { bg: '#f4f4f5', color: '#374151' },
-  'Quality':                 { bg: '#f3f4f6', color: '#374151' },
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const ms   = d => d ? new Date(d).getTime() : 0
@@ -42,33 +13,6 @@ function overlaps(aS, aE, bS, bE) {
   return !(new Date(aE) < new Date(bS) || new Date(bE) < new Date(aS))
 }
 
-function TradeBadge({ trade, staffed = true }) {
-  const parent = trade?.includes(' - ') ? trade.split(' - ')[0] : trade
-  const c = staffed
-    ? (TRADE_COLORS[trade] || TRADE_COLORS[parent] || { bg: '#f3f4f6', color: '#374151' })
-    : { bg: '#f4f4f5', color: '#a1a1aa' }
-  return (
-    <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '99px', fontSize: '11px', fontWeight: 700, background: c.bg, color: c.color, whiteSpace: 'nowrap' }}>
-      {trade || '—'}
-    </span>
-  )
-}
-
-function CertBadge({ cert }) {
-  const now = new Date(); now.setHours(0, 0, 0, 0)
-  const exp = cert.expiry_date ? new Date(cert.expiry_date + 'T00:00:00') : null
-  const expired = exp && exp < now
-  const days    = exp ? Math.floor((exp - now) / 86400000) : 999
-  const soon    = !expired && days >= 0 && days <= 30
-  const bg     = expired ? '#f4f4f5' : soon ? '#fffbeb' : '#f0f0f0'
-  const color  = expired ? '#111'    : soon ? '#b45309' : '#374151'
-  const border = expired ? '#e4e4e7' : soon ? '#fde68a' : '#e5e7eb'
-  return (
-    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '3px', background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap' }}>
-      {cert.cert_type}{expired ? ' – EXPIRED' : soon ? ' – exp soon' : ''}
-    </span>
-  )
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ScheduleClient({ projects, workers, windows, requirements, windowAssignments, holidays, rates }) {
@@ -77,27 +21,6 @@ export default function ScheduleClient({ projects, workers, windows, requirement
   const [search,   setSearch]   = useState('')
   const [viewMode, setViewMode] = useState('month')
 
-  // Rate map: rate_id → category
-  const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.personnel ? `${r.category} - ${r.personnel}` : r.category])), [rates])
-  const workerTrade = useCallback(w => rateMap[w.default_rate_id] || null, [rateMap])
-  // All trade categories from rates table (always show full list)
-  const dynamicTradeGroups = useMemo(() => {
-    const allTrades = [...new Set(rates.filter(r => r.category !== 'Equipment').map(r => r.personnel ? `${r.category} - ${r.personnel}` : r.category))].sort()
-    const sections = {}
-    for (const trade of allTrades) {
-      const parent  = trade.includes(' - ') ? trade.split(' - ')[0] : trade
-      const section = TRADE_SECTION[parent] || 'Other'
-      if (!sections[section]) sections[section] = []
-      sections[section].push(trade)
-    }
-    const order = [...SECTION_ORDER, 'Other']
-    return order.filter(s => sections[s]).map(s => ({ label: s, trades: sections[s] }))
-  }, [rates])
-
-  // Trades held by real (non-ghost) active workers
-  const staffedTrades = useMemo(() => new Set(
-    workers.filter(w => !/^Ghost \d+$/i.test(w.name)).map(w => workerTrade(w)).filter(Boolean)
-  ), [workers, workerTrade])
 
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
@@ -197,18 +120,6 @@ export default function ScheduleClient({ projects, workers, windows, requirement
     return projects.filter(p => !q || [p.name, p.client_name, p.internal_job_no, p.location, p.project_manager].join(' ').toLowerCase().includes(q))
   }, [projects, search])
 
-  // ── Window CRUD ────────────────────────────────────────────────────────────
-  async function saveWindow() {
-    if (!newWin.start_date || !newWin.end_date) { setError('Start and end date required'); return }
-    setSaving(true); setError('')
-    const { data, error: err } = await supabase
-      .from('project_crew_windows')
-      .insert({ project_id: selectedProject, description: newWin.description || null, start_date: newWin.start_date, end_date: newWin.end_date })
-      .select().single()
-    if (err) { setError(err.message); setSaving(false); return }
-    setWindows(prev => [...prev, data])
-    setSelectedWindow(data.id)
-    setAddingWindow(false)
   return (
     <div className="grid">
 
@@ -339,7 +250,6 @@ export default function ScheduleClient({ projects, workers, windows, requirement
                     {/* Crew window sub-bars */}
                     {projWins.map(win => {
                       const stats = windowStats(win.id)
-                      const isSelWin = win.id === selectedWindow
                       const barColor = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
                       return (
                         <div
@@ -351,8 +261,6 @@ export default function ScheduleClient({ projects, workers, windows, requirement
                             left: pct(win.start_date) + '%',
                             width: pctW(win.start_date, win.end_date) + '%',
                             background: barColor, borderRadius: '3px', zIndex: 2, minWidth: '6px', cursor: 'pointer',
-                            outline: isSelWin ? '2px solid #111' : 'none',
-                            outlineOffset: '1px',
                           }}
                         />
                       )
