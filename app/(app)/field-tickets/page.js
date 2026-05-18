@@ -7,6 +7,7 @@ export default async function FieldTicketsPage() {
   const { data: allTickets } = await supabase
     .from('field_tickets')
     .select('*, projects(name, archived)')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   // Exclude tickets belonging to archived projects

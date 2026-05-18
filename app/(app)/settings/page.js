@@ -1,9 +1,13 @@
 import { createServerSupabase } from '@/lib/supabase-server'
 import SettingsForm from './SettingsForm'
+import DeletedTickets from '@/components/settings/DeletedTickets'
 
 export default async function SettingsPage() {
   const supabase = await createServerSupabase()
-  const { data: settings } = await supabase.from('settings').select('*')
+  const [{ data: settings }, { data: deletedTickets }] = await Promise.all([
+    supabase.from('settings').select('*'),
+    supabase.from('field_tickets').select('id, ticket_number, date, deleted_at, projects(name)').not('deleted_at', 'is', null).order('deleted_at', { ascending: false }),
+  ])
   const s = Object.fromEntries((settings || []).map(row => [row.key, row.value]))
 
   return (
@@ -14,6 +18,8 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsForm s={s} />
+
+      <DeletedTickets tickets={deletedTickets || []} />
 
       <section className="panel">
         <h2>Hosting info</h2>

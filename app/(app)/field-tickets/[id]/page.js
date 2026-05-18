@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase-server'
+import { createServerSupabase, createAdminSupabase } from '@/lib/supabase-server'
 import { money, statusClass, formatDate, ticketItemTotal } from '@/lib/calculations'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -8,12 +8,19 @@ export default async function FieldTicketPage({ params }) {
   const supabase = await createServerSupabase()
   const { id } = await params
 
+  const { data: { user } } = await supabase.auth.getUser()
+  const admin = createAdminSupabase()
+  const { data: profile } = user
+    ? await admin.from('profiles').select('role').eq('id', user.id).single()
+    : { data: null }
+  const role = profile?.role?.toLowerCase() || null
+
   const [{ data: ticket }, { data: items }] = await Promise.all([
     supabase.from('field_tickets').select('*, projects(name, client_name), profiles!created_by(full_name)').eq('id', id).single(),
     supabase.from('field_ticket_items').select('*').eq('ticket_id', id).order('sort_order'),
   ])
 
-  if (!ticket) notFound()
+  if (!ticket || ticket.deleted_at) notFound()
 
   const labourItems = (items || []).filter(i => i.type === 'Labour')
   const equipmentItems = (items || []).filter(i => i.type === 'Equipment')
@@ -54,7 +61,7 @@ export default async function FieldTicketPage({ params }) {
             {['draft', 'rejected'].includes(ticket.status) && (
               <Link href={`/field-tickets/${ticket.id}/edit`}><button>Edit</button></Link>
             )}
-            <TicketActions ticket={ticket} />
+            <TicketActions ticket={ticket} role={role} />
           </div>
         </div>
       </div>
