@@ -578,7 +578,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
 
           {/* Window detail */}
           {selWin && !addingWindow && (
-            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div key={selWin.id} style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
               {/* Edit dates */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 160px auto', gap: '10px', alignItems: 'end' }}>
