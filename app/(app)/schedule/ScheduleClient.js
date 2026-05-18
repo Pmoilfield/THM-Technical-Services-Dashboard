@@ -158,6 +158,20 @@ export default function ScheduleClient({ projects, workers, windows, requirement
     return marks
   }, [spanStart, spanEnd, spanMs, viewMode])
 
+  // ── Conflict detection ────────────────────────────────────────────────────
+  function workerConflict(workerId, windowId) {
+    const win = windows.find(w => w.id === windowId)
+    if (!win) return false
+    for (const a of windowAssignments.filter(a => a.worker_id === workerId && a.window_id !== windowId)) {
+      const ow = windows.find(w => w.id === a.window_id)
+      if (ow && overlaps(win.start_date, win.end_date, ow.start_date, ow.end_date)) return true
+    }
+    for (const h of holidays.filter(h => h.worker_id === workerId)) {
+      if (overlaps(win.start_date, win.end_date, h.start_date, h.end_date)) return true
+    }
+    return false
+  }
+
   // ── Stats ──────────────────────────────────────────────────────────────────
   function windowStats(windowId) {
     const reqs     = requirements.filter(r => r.window_id === windowId)
@@ -172,8 +186,11 @@ export default function ScheduleClient({ projects, workers, windows, requirement
     let thisWeek  = 0
     projects.forEach(p => { if (overlaps(p.start_date, p.end_date || p.start_date, t, weekEnd)) thisWeek++ })
     const dispatched = new Set(windowAssignments.map(a => a.worker_id)).size
-    return { active: projects.length, thisWeek, dispatched }
-  }, [projects, windowAssignments])
+    const conflictWindows = windows.filter(w =>
+      windowAssignments.filter(a => a.window_id === w.id).some(a => workerConflict(a.worker_id, w.id))
+    ).length
+    return { active: projects.length, thisWeek, dispatched, conflictWindows }
+  }, [projects, windows, windowAssignments, holidays])
 
   const filteredProjects = useMemo(() => {
     const q = search.toLowerCase()
@@ -208,6 +225,7 @@ export default function ScheduleClient({ projects, workers, windows, requirement
           { label: 'Active Projects',    value: summaryStats.active },
           { label: 'Active This Week',   value: summaryStats.thisWeek },
           { label: 'Workers Dispatched', value: summaryStats.dispatched, color: '#16a34a' },
+          { label: 'Conflict Windows',   value: summaryStats.conflictWindows, color: summaryStats.conflictWindows > 0 ? '#d97706' : '#16a34a' },
         ].map((s, i) => (
           <div key={s.label} style={{ flex: 1, padding: '12px 20px', borderLeft: i > 0 ? '1px solid var(--line)' : 'none' }}>
             <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>{s.label}</div>
@@ -266,7 +284,10 @@ export default function ScheduleClient({ projects, workers, windows, requirement
             )}
 
             {filteredProjects.map(p => {
-              const projWins  = windows.filter(w => w.project_id === p.id)
+              const projWins   = windows.filter(w => w.project_id === p.id)
+              const hasConflict = projWins.some(w =>
+                windowAssignments.filter(a => a.window_id === w.id).some(a => workerConflict(a.worker_id, w.id))
+              )
               const totalReq  = projWins.reduce((s, w) => s + requirements.filter(r => r.window_id === w.id).reduce((ss, r) => ss + r.headcount, 0), 0)
               const totalAsgn = windowAssignments.filter(a => projWins.some(w => w.id === a.window_id)).length
 
@@ -289,7 +310,9 @@ export default function ScheduleClient({ projects, workers, windows, requirement
                     <div style={{ fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>{p.internal_job_no || '—'}</span>
-                      {projWins.length > 0
+                      {hasConflict
+                        ? <span style={{ background: '#fdf7f0', color: '#7a4c15', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e8d0aa' }}>⚠ Conflict</span>
+                        : projWins.length > 0
                           ? <span style={{ background: '#f4f4f5', color: '#52525b', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>{totalAsgn}/{totalReq} dispatched</span>
                           : <span style={{ background: '#f4f4f5', color: '#94a3b8', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>No windows</span>
                       }
