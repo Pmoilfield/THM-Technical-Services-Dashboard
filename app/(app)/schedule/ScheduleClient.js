@@ -3,13 +3,19 @@ import { useState, useMemo, useCallback, useRef } from 'react'
 import { createBrowserSupabase } from '@/lib/supabase'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const TRADE_GROUPS = [
-  { label: 'Mechanical',          trades: ['Pipefitter', 'Labourer', 'Operator'] },
-  { label: 'Weld',                trades: ['Weld – CWB', 'Weld – B-Pressure', 'Weld – Fire Watch'] },
-  { label: 'Electrical',          trades: ['Electrical'] },
-  { label: 'Instrumentation',     trades: ['Instrumentation'] },
-  { label: 'Management & Support',trades: ['Construction Management', 'Project Management', 'Quality'] },
-]
+// Section ordering — parent trade → display section
+const TRADE_SECTION = {
+  'Pipefitter':              'Mechanical',
+  'Labourer':                'Mechanical',
+  'Operator':                'Mechanical',
+  'Weld':                    'Weld',
+  'Electrical':              'Electrical',
+  'Instrumentation':         'Instrumentation',
+  'Construction Management': 'Management & Support',
+  'Project Management':      'Management & Support',
+  'Quality':                 'Management & Support',
+}
+const SECTION_ORDER = ['Mechanical', 'Weld', 'Electrical', 'Instrumentation', 'Management & Support']
 
 const TRADE_COLORS = {
   'Electrical':              { bg: '#dbeafe', color: '#1e40af' },
@@ -19,10 +25,7 @@ const TRADE_COLORS = {
   'Project Management':      { bg: '#fef3c7', color: '#92400e' },
   'Labourer':                { bg: '#f3f4f6', color: '#374151' },
   'Operator':                { bg: '#f3f4f6', color: '#374151' },
-  'Welder':                  { bg: '#f4f4f5', color: '#374151' },
-  'Weld – CWB':              { bg: '#f4f4f5', color: '#374151' },
-  'Weld – B-Pressure':       { bg: '#f4f4f5', color: '#374151' },
-  'Weld – Fire Watch':       { bg: '#f4f4f5', color: '#374151' },
+  'Weld':                    { bg: '#f4f4f5', color: '#374151' },
   'Quality':                 { bg: '#f3f4f6', color: '#374151' },
 }
 
@@ -37,7 +40,8 @@ function overlaps(aS, aE, bS, bE) {
 }
 
 function TradeBadge({ trade }) {
-  const c = TRADE_COLORS[trade] || { bg: '#f3f4f6', color: '#374151' }
+  const parent = trade?.includes(' - ') ? trade.split(' - ')[0] : trade
+  const c = TRADE_COLORS[trade] || TRADE_COLORS[parent] || { bg: '#f3f4f6', color: '#374151' }
   return (
     <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '99px', fontSize: '11px', fontWeight: 700, background: c.bg, color: c.color, whiteSpace: 'nowrap' }}>
       {trade || '—'}
@@ -81,8 +85,19 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   // Rate map: rate_id → category
   const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.category])), [rates])
   const workerTrade = useCallback(w => rateMap[w.default_rate_id] || null, [rateMap])
-  // Only show trades that at least one active worker actually holds
-  const activeTrades = useMemo(() => new Set(workers.map(w => workerTrade(w)).filter(Boolean)), [workers, workerTrade])
+  // Build trade groups dynamically from rate categories held by active workers
+  const dynamicTradeGroups = useMemo(() => {
+    const heldTrades = [...new Set(workers.map(w => workerTrade(w)).filter(Boolean))].sort()
+    const sections = {}
+    for (const trade of heldTrades) {
+      const parent  = trade.includes(' - ') ? trade.split(' - ')[0] : trade
+      const section = TRADE_SECTION[parent] || 'Other'
+      if (!sections[section]) sections[section] = []
+      sections[section].push(trade)
+    }
+    const order = [...SECTION_ORDER, 'Other']
+    return order.filter(s => sections[s]).map(s => ({ label: s, trades: sections[s] }))
+  }, [workers, workerTrade])
 
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
@@ -574,14 +589,11 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
               <div>
                 <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {TRADE_GROUPS.map(group => {
-                    const visibleTrades = group.trades.filter(t => activeTrades.has(t))
-                    if (!visibleTrades.length) return null
-                    return (
+                  {dynamicTradeGroups.map(group => (
                     <div key={group.label}>
                       <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '6px' }}>{group.label}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {visibleTrades.map(trade => {
+                        {group.trades.map(trade => {
                           const req   = winReqs.find(r => r.trade === trade)
                           const count = req?.headcount || 0
                           return (
@@ -595,8 +607,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                         })}
                       </div>
                     </div>
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
 
