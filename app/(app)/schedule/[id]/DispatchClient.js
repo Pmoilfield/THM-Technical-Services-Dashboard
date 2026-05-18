@@ -329,7 +329,9 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                     {dynamicTradeGroups.map(group => (
                       <optgroup key={group.label} label={group.label}>
                         {group.trades.map(trade => (
-                          <option key={trade} value={trade}>{trade}</option>
+                          <option key={trade} value={trade} disabled={!staffedTrades.has(trade)}>
+                            {trade}{!staffedTrades.has(trade) ? ' — no staff' : ''}
+                          </option>
                         ))}
                       </optgroup>
                     ))}
