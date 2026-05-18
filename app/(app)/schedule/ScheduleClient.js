@@ -44,7 +44,13 @@ export default function ScheduleClient({ projects, workers, windows, requirement
   }, [projects, viewMode])
 
   const pct  = d      => d ? Math.max(0, ((ms(d) - ms(spanStart)) / spanMs) * 100) : 0
-  const pctW = (s, e) => s && e ? Math.max(0.5, ((ms(e) - ms(s)) / spanMs) * 100) : 0.5
+  // In week view add 1 day to end so bars fill the full day column
+  const snapEnd = e => {
+    if (!e || viewMode !== 'week') return e
+    const d = new Date(e + 'T00:00:00'); d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+  }
+  const pctW = (s, e) => s && e ? Math.max(0.5, ((ms(snapEnd(e)) - ms(s)) / spanMs) * 100) : 0.5
 
   const timeMarks = useMemo(() => {
     const marks = []
