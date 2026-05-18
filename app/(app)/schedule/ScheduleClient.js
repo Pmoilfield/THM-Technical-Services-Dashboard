@@ -85,9 +85,12 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   // ── Gantt span ─────────────────────────────────────────────────────────────
   const { spanStart, spanEnd, spanMs } = useMemo(() => {
     if (viewMode === 'week') {
-      const start = new Date(Date.now() - 21 * 86400000).toISOString().split('T')[0]
-      const end   = new Date(Date.now() + 70 * 86400000).toISOString().split('T')[0]
-      return { spanStart: start, spanEnd: end, spanMs: ms(end) - ms(start) }
+      const now = new Date(); now.setHours(0,0,0,0)
+      const sunday = new Date(now.getTime() - now.getDay() * 86400000)
+      const saturday = new Date(sunday.getTime() + 6 * 86400000)
+      const start = sunday.toISOString().split('T')[0]
+      const end   = saturday.toISOString().split('T')[0]
+      return { spanStart: start, spanEnd: end, spanMs: ms(end) - ms(start) + 86400000 }
     }
     const valid = projects.filter(p => p.start_date)
     if (!valid.length) { const t = todayStr(); return { spanStart: t, spanEnd: t, spanMs: 1 } }
@@ -106,14 +109,13 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
   const timeMarks = useMemo(() => {
     const marks = []
     if (viewMode === 'week') {
-      // weekly ticks — advance to first Monday on or after spanStart
+      // one tick per day Sun–Sat
       let d = new Date(spanStart + 'T00:00:00')
-      while (d.getDay() !== 1) d = new Date(d.getTime() + 86400000)
       const end = new Date(spanEnd + 'T00:00:00')
       while (d <= end) {
         const p = ((d.getTime() - ms(spanStart)) / spanMs) * 100
-        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
-        d = new Date(d.getTime() + 7 * 86400000)
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }), pct: p })
+        d = new Date(d.getTime() + 86400000)
       }
     } else if (viewMode === 'quarter') {
       const qMonths = [0, 3, 6, 9]
