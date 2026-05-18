@@ -264,38 +264,49 @@ export default function DispatchClient({ project, workers, windows: initialWindo
 
       {/* ── Gantt strip ── */}
       {ganttSpan && windows.length > 0 && (
-        <section className="panel" style={{ padding: '12px 20px 16px', overflow: 'hidden' }}>
-          {/* Date axis */}
-          <div style={{ position: 'relative', height: '18px', marginBottom: '6px' }}>
-            {ganttMarks.map(m => (
-              <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: '1px', height: '100%', background: 'var(--line)' }} />
-                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', paddingLeft: '3px', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{m.label}</span>
-              </div>
-            ))}
-          </div>
-          {/* Bars */}
-          <div style={{ position: 'relative', height: '28px' }}>
-            {/* Today line */}
-            <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#111', zIndex: 10, borderRadius: '2px', pointerEvents: 'none' }} />
+        <section className="panel" style={{ padding: '12px 20px 14px', overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '0' }}>
+            {/* Column headers */}
+            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', paddingBottom: '6px' }}>Window</div>
+            <div style={{ position: 'relative', height: '20px' }}>
+              {ganttMarks.map(m => (
+                <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ width: '1px', height: '100%', background: 'var(--line)' }} />
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', paddingLeft: '3px', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{m.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* One row per window */}
             {windows.map(win => {
               const stats    = windowStats(win)
               const color    = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
               const isActive = win.id === selectedWindow
               return (
-                <div
-                  key={win.id}
-                  onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
-                  title={`${win.description || 'Window'} · ${fmt(win.start_date)} – ${fmt(win.end_date)} · ${stats.assigned}/${stats.required}`}
-                  style={{
-                    position: 'absolute', top: '6px', height: '16px',
-                    left: gpct(win.start_date) + '%',
-                    width: gpctW(win.start_date, win.end_date) + '%',
-                    background: color, borderRadius: '4px', cursor: 'pointer', minWidth: '6px',
-                    outline: isActive ? '2px solid #111' : 'none', outlineOffset: '2px',
-                    transition: 'outline 0.1s',
-                  }}
-                />
+                <>
+                  <div
+                    key={win.id + '-label'}
+                    onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
+                    style={{ fontSize: '12px', fontWeight: isActive ? 700 : 500, color: isActive ? '#111' : 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', paddingRight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
+                    {win.description || 'Unnamed'}
+                  </div>
+                  <div key={win.id + '-bar'} style={{ position: 'relative', height: '28px' }}>
+                    {/* Today line */}
+                    <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#e4e4e7', zIndex: 1, pointerEvents: 'none' }} />
+                    <div
+                      onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
+                      title={`${fmt(win.start_date)} – ${fmt(win.end_date)} · ${stats.assigned}/${stats.required} dispatched`}
+                      style={{
+                        position: 'absolute', top: '6px', height: '16px',
+                        left: gpct(win.start_date) + '%',
+                        width: gpctW(win.start_date, win.end_date) + '%',
+                        background: color, borderRadius: '4px', cursor: 'pointer', minWidth: '6px', zIndex: 2,
+                        outline: isActive ? '2px solid #111' : 'none', outlineOffset: '2px',
+                      }}
+                    />
+                  </div>
+                </>
               )
             })}
           </div>
