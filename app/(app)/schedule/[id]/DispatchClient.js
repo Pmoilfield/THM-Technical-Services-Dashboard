@@ -227,8 +227,9 @@ export default function DispatchClient({ project, workers, windows: initialWindo
     return { start: new Date(minMs).toISOString().split('T')[0], end: new Date(maxMs).toISOString().split('T')[0], spanMs: maxMs - minMs }
   }, [windows])
 
-  const gpct  = d      => ganttSpan ? Math.max(0, ((ms(d) - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100) : 0
-  const gpctW = (s, e) => ganttSpan ? Math.max(1,  ((ms(e) - ms(s))             / ganttSpan.spanMs) * 100) : 1
+  const gpct    = d      => ganttSpan ? Math.max(0, ((ms(d) - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100) : 0
+  const snapEnd = e => { if (!e) return e; const d = new Date(e + 'T00:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] }
+  const gpctW   = (s, e) => ganttSpan ? Math.max(1, ((ms(snapEnd(e)) - ms(s)) / ganttSpan.spanMs) * 100) : 1
 
   const ganttMarks = useMemo(() => {
     if (!ganttSpan) return []
