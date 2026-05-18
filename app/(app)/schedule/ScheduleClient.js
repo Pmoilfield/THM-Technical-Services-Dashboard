@@ -597,91 +597,80 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                 <button className="small" style={{ color: '#111', borderColor: '#e4e4e7', marginBottom: '1px' }} onClick={() => deleteWindow(selWin.id)}>Delete Window</button>
               </div>
 
-              {/* Trade requirements */}
-              <div>
-                <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {dynamicTradeGroups.map(group => (
-                    <div key={group.label}>
-                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '6px' }}>{group.label}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {/* Trade rows + inline assignments */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '16px', borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
+
+                {/* Left: stacked trade rows */}
+                <div>
+                  <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '10px' }}>Manpower Required</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    {dynamicTradeGroups.map(group => (
+                      <div key={group.label}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#bbb', padding: '6px 0 3px' }}>{group.label}</div>
                         {group.trades.map(trade => {
                           const req      = winReqs.find(r => r.trade === trade)
                           const count    = req?.headcount || 0
+                          const assigned = winAssignments.filter(a => a.trade === trade)
+                          const assignedWorkers = assigned.map(a => ({ ...workers.find(w => w.id === a.worker_id), assignmentId: a.id })).filter(Boolean)
+                          const isSelected = selectedTrade === trade
                           return (
                             <div
                               key={trade}
+                              onClick={() => setSelectedTrade(isSelected ? null : trade)}
                               style={{
-                                display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px',
-                                borderRadius: '4px',
-                                border: `1px solid ${count > 0 ? '#555' : 'var(--line)'}`,
-                                background: count > 0 ? '#f9f9f9' : '#fafafa',
+                                display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px',
+                                borderRadius: '4px', cursor: 'pointer', marginBottom: '2px',
+                                background: isSelected ? '#f0f0f0' : count > 0 ? '#fafafa' : 'transparent',
+                                border: `1px solid ${isSelected ? '#aaa' : count > 0 ? '#e4e4e7' : 'transparent'}`,
                               }}
                             >
-                              <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
-                              <button style={miniBtn} onClick={() => count > 0 && upsertRequirement(selWin.id, trade, count - 1)}>−</button>
-                              <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '14px', textAlign: 'center' }}>{count}</span>
-                              <button style={miniBtn} onClick={() => upsertRequirement(selWin.id, trade, count + 1)}>+</button>
+                              {/* Count controls */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                <button style={miniBtn} onClick={e => { e.stopPropagation(); count > 0 && upsertRequirement(selWin.id, trade, count - 1) }}>−</button>
+                                <span style={{ fontSize: '12px', fontWeight: 700, minWidth: '14px', textAlign: 'center', color: count > 0 ? '#111' : '#bbb' }}>{count}</span>
+                                <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count + 1) }}>+</button>
+                              </div>
+                              {/* Trade badge */}
+                              <div style={{ minWidth: '200px' }}>
+                                <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
+                              </div>
+                              {/* Assigned workers inline */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', flex: 1 }}>
+                                {assignedWorkers.map(w => (
+                                  <span
+                                    key={w.id}
+                                    onClick={e => { e.stopPropagation(); removeAssignment(w.assignmentId) }}
+                                    title="Click to remove"
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                      fontSize: '12px', fontWeight: 600, padding: '2px 8px',
+                                      background: w.conflict ? '#fffbeb' : '#fff',
+                                      border: `1px solid ${w.conflict ? '#fde68a' : '#e4e4e7'}`,
+                                      borderRadius: '99px', cursor: 'pointer', whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {w.name}
+                                    {w.conflict && <span style={{ color: '#d97706', fontSize: '10px' }}>⚠</span>}
+                                    <span style={{ color: '#aaa', fontSize: '10px' }}>×</span>
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           )
                         })}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Worker assignment */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-
-                {/* Assigned */}
-                <div>
-                  <div style={{ marginBottom: '8px' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '6px' }}>
-                      Assigned — {workerGroups.assigned.length}
-                    </h4>
-                    {winReqs.filter(r => r.headcount > 0).length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                        {winReqs.filter(r => r.headcount > 0).map(r => (
-                          <span
-                            key={r.trade}
-                            onClick={() => setSelectedTrade(selectedTrade === r.trade ? null : r.trade)}
-                            title={selectedTrade === r.trade ? 'Click to clear filter' : 'Click to filter available workers'}
-                            style={{ cursor: 'pointer', opacity: selectedTrade && selectedTrade !== r.trade ? 0.45 : 1, outline: selectedTrade === r.trade ? '2px solid #111' : 'none', outlineOffset: '2px', borderRadius: '99px' }}
-                          >
-                            <TradeBadge trade={r.trade} staffed={staffedTrades.has(r.trade)} />
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {workerGroups.assigned.length === 0 && <p style={{ fontSize: '13px', color: 'var(--muted)' }}>None yet — add from the right.</p>}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {workerGroups.assigned.map(w => {
-                      const a     = winAssignments.find(a => a.worker_id === w.id)
-                      const certs = w.worker_certifications || []
-                      return (
-                        <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', background: w.conflict ? '#fffbeb' : '#f8fafc', border: `1px solid ${w.conflict ? '#fde68a' : 'var(--line)'}`, borderRadius: '6px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '13px', fontWeight: 600 }}>{w.name}</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
-                              <TradeBadge trade={a?.trade || workerTrade(w)} />
-                              {certs.map(c => <CertBadge key={c.id} cert={c} />)}
-                              {w.conflict && <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {w.conflict}</span>}
-                            </div>
-                          </div>
-                          <button className="small" style={{ color: '#111', borderColor: '#e4e4e7' }} onClick={() => a && removeAssignment(a.id)}>Remove</button>
-                        </div>
-                      )
-                    })}
+                    ))}
                   </div>
                 </div>
 
                 {/* Available */}
                 <div>
-                  <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '8px' }}>
-                    Available — {workerGroups.available.length}
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', margin: 0 }}>
+                      Available — {workerGroups.available.length}
+                    </h4>
+                    {selectedTrade && <TradeBadge trade={selectedTrade} staffed={staffedTrades.has(selectedTrade)} />}
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '340px', overflowY: 'auto' }}>
                     {[...workerGroups.available].sort((a, b) => {
                       if (!selectedTrade) return 0
