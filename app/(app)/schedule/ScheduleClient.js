@@ -1,6 +1,6 @@
 'use client'
-import { useState, useMemo, useCallback, useRef } from 'react'
-import { createBrowserSupabase } from '@/lib/supabase'
+import { useState, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // Section ordering — parent trade → display section
@@ -71,22 +71,11 @@ function CertBadge({ cert }) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function ScheduleClient({ projects, workers, windows: initialWindows, requirements: initialRequirements, windowAssignments: initialWindowAssignments, holidays, rates }) {
-  const supabase    = createBrowserSupabase()
-  const dispatchRef = useRef(null)
+export default function ScheduleClient({ projects, workers, windows, requirements, windowAssignments, holidays, rates }) {
+  const router = useRouter()
 
-  const [windows,           setWindows]           = useState(initialWindows)
-  const [requirements,      setRequirements]      = useState(initialRequirements)
-  const [windowAssignments, setWindowAssignments] = useState(initialWindowAssignments)
-  const [selectedProject,   setSelectedProject]   = useState(null)
-  const [selectedWindow,    setSelectedWindow]    = useState(null)
-  const [addingWindow,      setAddingWindow]      = useState(false)
-  const [newWin,            setNewWin]            = useState({ description: '', start_date: '', end_date: '' })
-  const [saving,            setSaving]            = useState(false)
-  const [error,             setError]             = useState('')
-  const [search,            setSearch]            = useState('')
-  const [viewMode,          setViewMode]          = useState('month')
-  const [selectedTrade,     setSelectedTrade]     = useState(null)
+  const [search,   setSearch]   = useState('')
+  const [viewMode, setViewMode] = useState('month')
 
   // Rate map: rate_id → category
   const rateMap     = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.personnel ? `${r.category} - ${r.personnel}` : r.category])), [rates])
@@ -169,41 +158,22 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
     return marks
   }, [spanStart, spanEnd, spanMs, viewMode])
 
-  // ── Stats helpers ──────────────────────────────────────────────────────────
+  // ── Stats ──────────────────────────────────────────────────────────────────
   function windowStats(windowId) {
-    const reqs  = requirements.filter(r => r.window_id === windowId)
-    const asgns = windowAssignments.filter(a => a.window_id === windowId)
+    const reqs     = requirements.filter(r => r.window_id === windowId)
+    const asgns    = windowAssignments.filter(a => a.window_id === windowId)
     const required = reqs.reduce((s, r) => s + r.headcount, 0)
     return { required, assigned: asgns.length, open: Math.max(required - asgns.length, 0) }
   }
 
-  function workerConflict(workerId, windowId) {
-    const win = windows.find(w => w.id === windowId)
-    if (!win) return null
-    for (const a of windowAssignments.filter(a => a.worker_id === workerId && a.window_id !== windowId)) {
-      const ow = windows.find(w => w.id === a.window_id)
-      if (ow && overlaps(win.start_date, win.end_date, ow.start_date, ow.end_date)) {
-        const proj = projects.find(p => p.id === ow.project_id)
-        return ow.project_id === win.project_id ? 'Double-booked on this project' : `On ${proj?.name || 'another project'}`
-      }
-    }
-    for (const h of holidays.filter(h => h.worker_id === workerId)) {
-      if (overlaps(win.start_date, win.end_date, h.start_date, h.end_date)) return 'On holiday'
-    }
-    return null
-  }
-
   const summaryStats = useMemo(() => {
-    const t = todayStr()
+    const t       = todayStr()
     const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
-    let thisWeek = 0
+    let thisWeek  = 0
     projects.forEach(p => { if (overlaps(p.start_date, p.end_date || p.start_date, t, weekEnd)) thisWeek++ })
     const dispatched = new Set(windowAssignments.map(a => a.worker_id)).size
-    const conflictWindows = windows.filter(w =>
-      windowAssignments.filter(a => a.window_id === w.id).some(a => workerConflict(a.worker_id, w.id))
-    ).length
-    return { active: projects.length, thisWeek, dispatched, conflictWindows }
-  }, [projects, windows, windowAssignments, holidays])
+    return { active: projects.length, thisWeek, dispatched }
+  }, [projects, windowAssignments])
 
   const filteredProjects = useMemo(() => {
     const q = search.toLowerCase()
@@ -222,90 +192,6 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
     setWindows(prev => [...prev, data])
     setSelectedWindow(data.id)
     setAddingWindow(false)
-    setNewWin({ description: '', start_date: '', end_date: '' })
-    setSaving(false)
-  }
-
-  async function deleteWindow(windowId) {
-    if (!confirm('Delete this crew window and all its assignments?')) return
-    await supabase.from('project_crew_windows').delete().eq('id', windowId)
-    setWindows(prev => prev.filter(w => w.id !== windowId))
-    setRequirements(prev => prev.filter(r => r.window_id !== windowId))
-    setWindowAssignments(prev => prev.filter(a => a.window_id !== windowId))
-    if (selectedWindow === windowId) setSelectedWindow(null)
-  }
-
-  async function updateWindow(windowId, field, value) {
-    setWindows(prev => prev.map(w => w.id === windowId ? { ...w, [field]: value } : w))
-    await supabase.from('project_crew_windows').update({ [field]: value }).eq('id', windowId)
-  }
-
-  // ── Requirement CRUD ───────────────────────────────────────────────────────
-  async function upsertRequirement(windowId, trade, headcount) {
-    const existing = requirements.find(r => r.window_id === windowId && r.trade === trade)
-    if (headcount <= 0 && existing) {
-      await supabase.from('crew_window_requirements').delete().eq('id', existing.id)
-      setRequirements(prev => prev.filter(r => r.id !== existing.id))
-    } else if (existing) {
-      const { data } = await supabase.from('crew_window_requirements').update({ headcount }).eq('id', existing.id).select().single()
-      setRequirements(prev => prev.map(r => r.id === existing.id ? data : r))
-    } else if (headcount > 0) {
-      const { data } = await supabase.from('crew_window_requirements').insert({ window_id: windowId, trade, headcount }).select().single()
-      setRequirements(prev => [...prev, data])
-    }
-  }
-
-  // ── Assignment CRUD ────────────────────────────────────────────────────────
-  async function addAssignment(windowId, workerId, trade) {
-    const { data, error: err } = await supabase.from('crew_window_assignments').insert({ window_id: windowId, worker_id: workerId, trade }).select().single()
-    if (!err && data) setWindowAssignments(prev => [...prev, data])
-  }
-
-  async function removeAssignment(assignmentId) {
-    await supabase.from('crew_window_assignments').delete().eq('id', assignmentId)
-    setWindowAssignments(prev => prev.filter(a => a.id !== assignmentId))
-  }
-
-  // ── Select helpers ─────────────────────────────────────────────────────────
-  function openProject(projId) {
-    if (projId === selectedProject) { setSelectedProject(null); setSelectedWindow(null); return }
-    setSelectedProject(projId)
-    setAddingWindow(false)
-    const first = windows.find(w => w.project_id === projId)
-    setSelectedWindow(first?.id || null)
-    setTimeout(() => dispatchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-  }
-
-  function openWindow(winId) {
-    setSelectedWindow(winId)
-    setAddingWindow(false)
-    setSelectedTrade(null)
-  }
-
-  // ── Derived for dispatch panel ─────────────────────────────────────────────
-  const selProj        = projects.find(p => p.id === selectedProject)
-  const selWin         = windows.find(w => w.id === selectedWindow)
-  const projWindows    = selectedProject ? windows.filter(w => w.project_id === selectedProject).sort((a, b) => ms(a.start_date) - ms(b.start_date)) : []
-  const winAssignments = selectedWindow  ? windowAssignments.filter(a => a.window_id === selectedWindow) : []
-  const assignedIds    = new Set(winAssignments.map(a => a.worker_id))
-  const winReqs        = selectedWindow  ? requirements.filter(r => r.window_id === selectedWindow) : []
-
-  const workerGroups = useMemo(() => {
-    if (!selWin) return { assigned: [], available: [], unavailable: [] }
-    const assigned = [], available = [], unavailable = []
-    workers.forEach(w => {
-      const conflict   = workerConflict(w.id, selWin.id)
-      const isAssigned = assignedIds.has(w.id)
-      if (isAssigned)        assigned.push({ ...w, conflict })
-      else if (conflict)     unavailable.push({ ...w, conflict })
-      else                   available.push(w)
-    })
-    return { assigned, available, unavailable }
-  }, [selWin?.id, workers, windowAssignments, holidays])
-
-  // ── Shared styles ──────────────────────────────────────────────────────────
-  const miniBtn = { background: 'none', border: '1px solid var(--line)', borderRadius: '3px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', lineHeight: 1, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
-
   return (
     <div className="grid">
 
@@ -319,10 +205,9 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
       {/* ── Summary strip ── */}
       <div style={{ display: 'flex', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         {[
-          { label: 'Active Projects',   value: summaryStats.active },
-          { label: 'Active This Week',  value: summaryStats.thisWeek },
-          { label: 'Workers Dispatched',value: summaryStats.dispatched,       color: '#16a34a' },
-          { label: 'Conflict Windows',  value: summaryStats.conflictWindows,  color: summaryStats.conflictWindows > 0 ? '#d97706' : '#16a34a' },
+          { label: 'Active Projects',    value: summaryStats.active },
+          { label: 'Active This Week',   value: summaryStats.thisWeek },
+          { label: 'Workers Dispatched', value: summaryStats.dispatched, color: '#16a34a' },
         ].map((s, i) => (
           <div key={s.label} style={{ flex: 1, padding: '12px 20px', borderLeft: i > 0 ? '1px solid var(--line)' : 'none' }}>
             <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)' }}>{s.label}</div>
@@ -345,6 +230,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
         <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <h2 style={{ fontSize: '14px', fontWeight: 700 }}>Manpower Loading</h2>
+
             <div style={{ display: 'flex', gap: '3px', background: '#f4f4f5', borderRadius: '6px', padding: '2px' }}>
               {[['week','Week'],['month','Month'],['quarter','Quarter']].map(([v, label]) => (
                 <button key={v} onClick={() => setViewMode(v)} style={{
@@ -357,7 +243,6 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
               ))}
             </div>
           </div>
-          {selectedProject && <button className="small" onClick={() => { setSelectedProject(null); setSelectedWindow(null) }}>Clear selection</button>}
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -382,33 +267,29 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
 
             {filteredProjects.map(p => {
               const projWins  = windows.filter(w => w.project_id === p.id)
-              const isSelected = p.id === selectedProject
-              const hasConflict = projWins.some(w =>
-                windowAssignments.filter(a => a.window_id === w.id).some(a => workerConflict(a.worker_id, w.id))
-              )
-              const totalReq = projWins.reduce((s, w) => s + requirements.filter(r => r.window_id === w.id).reduce((ss, r) => ss + r.headcount, 0), 0)
+              const totalReq  = projWins.reduce((s, w) => s + requirements.filter(r => r.window_id === w.id).reduce((ss, r) => ss + r.headcount, 0), 0)
               const totalAsgn = windowAssignments.filter(a => projWins.some(w => w.id === a.window_id)).length
 
               return (
                 <div
                   key={p.id}
-                  onClick={() => openProject(p.id)}
+                  onClick={() => router.push(`/schedule/${p.id}`)}
                   style={{
                     display: 'grid', gridTemplateColumns: '280px 1fr', alignItems: 'center',
                     gap: '14px', padding: '6px 8px', borderRadius: '8px', cursor: 'pointer',
-                    background: isSelected ? '#f4f4f5' : 'transparent',
-                    border: `1px solid ${isSelected ? '#e4e4e7' : 'transparent'}`,
+                    background: 'transparent',
+                    border: '1px solid transparent',
                     transition: 'background 0.1s',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f4f4f5'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   {/* Label */}
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>{p.internal_job_no || '—'}</span>
-                      {hasConflict
-                        ? <span style={{ background: '#fdf7f0', color: '#7a4c15', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e8d0aa' }}>⚠ Conflict</span>
-                        : projWins.length > 0
+                      {projWins.length > 0
                           ? <span style={{ background: '#f4f4f5', color: '#52525b', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>{totalAsgn}/{totalReq} dispatched</span>
                           : <span style={{ background: '#f4f4f5', color: '#94a3b8', fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>No windows</span>
                       }
@@ -441,7 +322,7 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                         <div
                           key={win.id}
                           title={`${win.description || 'Crew Window'} · ${fmt(win.start_date)} – ${fmt(win.end_date)} · ${stats.assigned}/${stats.required} assigned`}
-                          onClick={e => { e.stopPropagation(); setSelectedProject(p.id); openWindow(win.id); setTimeout(() => dispatchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
+                          onClick={e => { e.stopPropagation(); router.push(`/schedule/${p.id}`) }}
                           style={{
                             position: 'absolute', top: '11px', height: '14px',
                             left: pct(win.start_date) + '%',
@@ -499,9 +380,9 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
         </div>
       </section>
 
-      {/* ── Dispatch panel ── */}
-      {selectedProject && (
-        <section className="panel" ref={dispatchRef}>
+      {/* ── placeholder so the block below closes cleanly ── */}
+      {false && (
+        <section>
 
           {/* Project header */}
           <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
