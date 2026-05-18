@@ -9,6 +9,7 @@ const TRADE_SECTION = {
   'Labourer':                'Mechanical',
   'Operator':                'Mechanical',
   'Weld':                    'Weld',
+  'Welder':                  'Weld',
   'Electrical':              'Electrical',
   'Instrumentation':         'Instrumentation',
   'Construction Management': 'Management & Support',
@@ -26,6 +27,7 @@ const TRADE_COLORS = {
   'Labourer':                { bg: '#f3f4f6', color: '#374151' },
   'Operator':                { bg: '#f3f4f6', color: '#374151' },
   'Weld':                    { bg: '#f4f4f5', color: '#374151' },
+  'Welder':                  { bg: '#f4f4f5', color: '#374151' },
   'Quality':                 { bg: '#f3f4f6', color: '#374151' },
 }
 
