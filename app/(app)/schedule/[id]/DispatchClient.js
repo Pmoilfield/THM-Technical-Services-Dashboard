@@ -430,7 +430,14 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                             {certs.map(c => <CertBadge key={c.id} cert={c} />)}
                           </div>
                         </div>
-                        <button className="small primary" onClick={() => addAssignment(selWin.id, w.id, workerTrade(w))}>+ Add</button>
+                        <button className="small primary" onClick={async () => {
+                          const trade = workerTrade(w)
+                          if (trade) {
+                            const req = winReqs.find(r => r.trade === trade)
+                            await upsertRequirement(selWin.id, trade, (req?.headcount || 0) + 1)
+                          }
+                          addAssignment(selWin.id, w.id, trade)
+                        }}>+ Add</button>
                       </div>
                     )
                   })}
@@ -452,7 +459,14 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                                 <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {w.conflict}</span>
                               </div>
                             </div>
-                            <button className="small" onClick={() => addAssignment(selWin.id, w.id, workerTrade(w))} title="Add anyway">Add anyway</button>
+                            <button className="small" onClick={async () => {
+                              const trade = workerTrade(w)
+                              if (trade) {
+                                const req = winReqs.find(r => r.trade === trade)
+                                await upsertRequirement(selWin.id, trade, (req?.headcount || 0) + 1)
+                              }
+                              addAssignment(selWin.id, w.id, trade)
+                            }} title="Add anyway">Add anyway</button>
                           </div>
                         )
                       })}
