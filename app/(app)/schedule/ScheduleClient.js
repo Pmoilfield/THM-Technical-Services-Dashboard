@@ -608,23 +608,20 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
                         {group.trades.map(trade => {
                           const req      = winReqs.find(r => r.trade === trade)
                           const count    = req?.headcount || 0
-                          const isActive = selectedTrade === trade
                           return (
                             <div
                               key={trade}
-                              onClick={() => setSelectedTrade(isActive ? null : trade)}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px',
-                                borderRadius: '4px', cursor: 'pointer',
-                                border: `1px solid ${isActive ? '#111' : count > 0 ? '#555' : 'var(--line)'}`,
-                                background: isActive ? '#f0f0f0' : count > 0 ? '#f9f9f9' : '#fafafa',
-                                outline: isActive ? '2px solid #111' : 'none', outlineOffset: '1px',
+                                borderRadius: '4px',
+                                border: `1px solid ${count > 0 ? '#555' : 'var(--line)'}`,
+                                background: count > 0 ? '#f9f9f9' : '#fafafa',
                               }}
                             >
                               <TradeBadge trade={trade} staffed={staffedTrades.has(trade)} />
-                              <button style={miniBtn} onClick={e => { e.stopPropagation(); count > 0 && upsertRequirement(selWin.id, trade, count - 1) }}>−</button>
+                              <button style={miniBtn} onClick={() => count > 0 && upsertRequirement(selWin.id, trade, count - 1)}>−</button>
                               <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '14px', textAlign: 'center' }}>{count}</span>
-                              <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(selWin.id, trade, count + 1) }}>+</button>
+                              <button style={miniBtn} onClick={() => upsertRequirement(selWin.id, trade, count + 1)}>+</button>
                             </div>
                           )
                         })}
@@ -639,18 +636,23 @@ export default function ScheduleClient({ projects, workers, windows: initialWind
 
                 {/* Assigned */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', margin: 0 }}>
+                  <div style={{ marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', marginBottom: '6px' }}>
                       Assigned — {workerGroups.assigned.length}
                     </h4>
-                    {selectedTrade && (
-                      <span
-                        onClick={() => setSelectedTrade(null)}
-                        title="Click to clear filter"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <TradeBadge trade={selectedTrade} staffed={staffedTrades.has(selectedTrade)} />
-                      </span>
+                    {winReqs.filter(r => r.headcount > 0).length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {winReqs.filter(r => r.headcount > 0).map(r => (
+                          <span
+                            key={r.trade}
+                            onClick={() => setSelectedTrade(selectedTrade === r.trade ? null : r.trade)}
+                            title={selectedTrade === r.trade ? 'Click to clear filter' : 'Click to filter available workers'}
+                            style={{ cursor: 'pointer', opacity: selectedTrade && selectedTrade !== r.trade ? 0.45 : 1, outline: selectedTrade === r.trade ? '2px solid #111' : 'none', outlineOffset: '2px', borderRadius: '99px' }}
+                          >
+                            <TradeBadge trade={r.trade} staffed={staffedTrades.has(r.trade)} />
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   {workerGroups.assigned.length === 0 && <p style={{ fontSize: '13px', color: 'var(--muted)' }}>None yet — add from the right.</p>}
