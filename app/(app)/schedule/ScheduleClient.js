@@ -194,7 +194,7 @@ export default function ScheduleClient({ projects, workers, windows, requirement
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No projects with scheduled dates.</div>
             )}
 
-            {filteredProjects.map(p => {
+            {filteredProjects.map((p, rowIdx) => {
               const projWins   = windows.filter(w => w.project_id === p.id)
               const hasConflict = projWins.some(w =>
                 windowAssignments.filter(a => a.window_id === w.id).some(a => workerConflict(a.worker_id, w.id))
@@ -234,7 +234,7 @@ export default function ScheduleClient({ projects, workers, windows, requirement
                   <div style={{ position: 'relative', minWidth: '700px', height: '36px' }}>
                     {/* Today line */}
                     <div style={{ position: 'absolute', left: pct(todayStr()) + '%', top: 0, bottom: 0, width: '2px', background: '#111', zIndex: 10, borderRadius: '2px', pointerEvents: 'none' }}>
-                      <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 800, color: '#111', whiteSpace: 'nowrap' }}>Today</div>
+                      {rowIdx === 0 && <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 800, color: '#111', whiteSpace: 'nowrap' }}>Today</div>}
                     </div>
 
                     {/* Project background bar */}
