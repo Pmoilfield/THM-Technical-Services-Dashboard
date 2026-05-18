@@ -82,6 +82,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
   const [saving,            setSaving]            = useState(false)
   const [error,             setError]             = useState('')
   const [selectedTrade,     setSelectedTrade]     = useState(null)
+  const [workerSearch,      setWorkerSearch]      = useState('')
 
   // Rate map + trade helpers
   const rateMap      = useMemo(() => Object.fromEntries(rates.map(r => [r.id, r.personnel ? `${r.category} - ${r.personnel}` : r.category])), [rates])
@@ -241,7 +242,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
             return (
               <button
                 key={win.id}
-                onClick={() => { setSelectedWindow(win.id); setAddingWindow(false); setSelectedTrade(null) }}
+                onClick={() => { setSelectedWindow(win.id); setAddingWindow(false); setSelectedTrade(null); setWorkerSearch('') }}
                 style={{
                   background: 'none', border: 'none', padding: '12px 20px', cursor: 'pointer', whiteSpace: 'nowrap',
                   borderBottom: isActive ? '2px solid #111' : '2px solid transparent', borderRadius: 0,
@@ -415,8 +416,26 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                   </h4>
                   {selectedTrade && <TradeBadge trade={selectedTrade} staffed={staffedTrades.has(selectedTrade)} />}
                 </div>
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <input
+                    value={workerSearch}
+                    onChange={e => setWorkerSearch(e.target.value)}
+                    placeholder="Search name or trade…"
+                    style={{ width: '100%', paddingRight: workerSearch ? '28px' : undefined, fontSize: '13px', boxSizing: 'border-box' }}
+                  />
+                  {workerSearch && (
+                    <button
+                      onClick={() => setWorkerSearch('')}
+                      style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '14px', lineHeight: 1, padding: 0 }}
+                    >×</button>
+                  )}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '500px', overflowY: 'auto' }}>
-                  {[...workerGroups.available].sort((a, b) => {
+                  {[...workerGroups.available].filter(w => {
+                    if (!workerSearch) return true
+                    const q = workerSearch.toLowerCase()
+                    return w.name.toLowerCase().includes(q) || (workerTrade(w) || '').toLowerCase().includes(q)
+                  }).sort((a, b) => {
                     if (!selectedTrade) return 0
                     return (workerTrade(a) === selectedTrade ? 0 : 1) - (workerTrade(b) === selectedTrade ? 0 : 1)
                   }).map(w => {
