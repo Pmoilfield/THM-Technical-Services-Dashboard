@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase-server'
+import { createAdminSupabase } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import PrintButtons from './PrintButtons'
 
@@ -9,7 +9,7 @@ const fmtShort = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-CA', 
 
 export default async function PrintDispatchPage({ params }) {
   const { id } = await params
-  const supabase = await createServerSupabase()
+  const supabase = createAdminSupabase()
 
   const { data: windowIds } = await supabase.from('project_crew_windows').select('id').eq('project_id', id)
   const ids = (windowIds || []).map(w => w.id)
