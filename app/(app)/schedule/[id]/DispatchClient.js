@@ -489,14 +489,39 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                           assignmentId: a.id, onsite_start: a.onsite_start, onsite_end: a.onsite_end,
                         })).filter(w => w?.id)
                         const isSelected = selectedTrade === trade
+                        const isUnknownTrade = !dynamicTradeGroups.flatMap(g => g.trades).includes(trade)
                         return (
-                          <div key={trade} onClick={() => setSelectedTrade(isSelected ? null : trade)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: isSelected ? '#f0f4ff' : '#fafafa', border: `1px solid ${isSelected ? '#93c5fd' : '#e4e4e7'}` }}>
+                          <div key={trade} onClick={() => setSelectedTrade(isSelected ? null : trade)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', background: isSelected ? '#f0f4ff' : '#fafafa', border: `1px solid ${isSelected ? '#93c5fd' : isUnknownTrade ? '#fca5a5' : '#e4e4e7'}` }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                               <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(win.id, trade, count - 1) }}>−</button>
                               <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{count}</span>
                               <button style={miniBtn} onClick={e => { e.stopPropagation(); upsertRequirement(win.id, trade, count + 1) }}>+</button>
                             </div>
-                            <div style={{ flexShrink: 0 }}><TradeBadge trade={trade} staffed={staffedTrades.has(trade)} /></div>
+                            {isUnknownTrade ? (
+                              <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 600 }}>⚠ Unknown trade: "{trade}"</span>
+                                <select style={{ fontSize: '12px', padding: '2px 4px' }} defaultValue="" onChange={async e => {
+                                  const newTrade = e.target.value
+                                  if (!newTrade) return
+                                  // Insert new req with correct trade, delete old
+                                  const existing = winReqs.find(r => r.trade === newTrade)
+                                  await upsertRequirement(win.id, newTrade, (existing?.headcount || 0) + count)
+                                  await upsertRequirement(win.id, trade, 0)
+                                  e.target.value = ''
+                                }}>
+                                  <option value="">Change to…</option>
+                                  {dynamicTradeGroups.map(group => (
+                                    <optgroup key={group.label} label={group.label}>
+                                      {group.trades.filter(t => staffedTrades.has(t)).map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                      ))}
+                                    </optgroup>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div style={{ flexShrink: 0 }}><TradeBadge trade={trade} staffed={staffedTrades.has(trade)} /></div>
+                            )}
                             {assignedWorkers.map(w => (
                               <div key={w.id} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                                 <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -508,6 +533,8 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                                 <button onClick={() => removeAssignment(w.assignmentId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px', lineHeight: 1, padding: '0 2px' }} title="Remove">×</button>
                               </div>
                             ))}
+                            {/* Delete requirement row */}
+                            <button onClick={e => { e.stopPropagation(); upsertRequirement(win.id, trade, 0) }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#d1d5db', fontSize: '16px', lineHeight: 1, padding: '0 2px', flexShrink: 0 }} title="Remove this requirement">×</button>
                           </div>
                         )
                       })}
