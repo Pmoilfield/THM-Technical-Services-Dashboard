@@ -233,13 +233,35 @@ export default function DispatchClient({ project, workers, windows: initialWindo
 
   const ganttMarks = useMemo(() => {
     if (!ganttSpan) return []
+    const spanDays = ganttSpan.spanMs / 86400000
     const marks = []
-    let d = new Date(new Date(ganttSpan.start).getFullYear(), new Date(ganttSpan.start).getMonth(), 1)
-    const end = new Date(ganttSpan.end)
-    while (d <= end) {
-      const p = ((d.getTime() - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100
-      if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
-      d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+
+    if (spanDays <= 90) {
+      // Weekly marks — find first Monday on or after span start
+      let d = new Date(ganttSpan.start + 'T00:00:00')
+      const dow = d.getDay()
+      if (dow !== 1) d.setDate(d.getDate() + (8 - dow) % 7)
+      const end = new Date(ganttSpan.end + 'T00:00:00')
+      while (d <= end) {
+        const p = ((d.getTime() - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
+        d = new Date(d); d.setDate(d.getDate() + 7)
+      }
+    } else {
+      // Monthly marks
+      let d = new Date(new Date(ganttSpan.start).getFullYear(), new Date(ganttSpan.start).getMonth(), 1)
+      const end = new Date(ganttSpan.end)
+      while (d <= end) {
+        const p = ((d.getTime() - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
+        d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+      }
+    }
+
+    // Always add span-start label if no marks landed near the left edge
+    if (!marks.length || marks[0].pct > 10) {
+      const d = new Date(ganttSpan.start + 'T00:00:00')
+      marks.unshift({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: 0 })
     }
     return marks
   }, [ganttSpan])
