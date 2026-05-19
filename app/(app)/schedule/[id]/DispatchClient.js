@@ -266,20 +266,33 @@ export default function DispatchClient({ project, workers, windows: initialWindo
       {/* ── Gantt strip ── */}
       {ganttSpan && windows.length > 0 && (
         <section className="panel" style={{ padding: '12px 20px 14px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', gap: '0' }}>
-            {/* Column headers */}
-            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', paddingBottom: '6px' }}>Window</div>
-            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', paddingBottom: '6px' }}>Dates</div>
-            <div style={{ position: 'relative', height: '20px' }}>
+
+          {/* Column label row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>Window</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)' }}>Dates</div>
+            <div />
+          </div>
+
+          {/* Date scale axis */}
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', marginBottom: '6px' }}>
+            <div /><div />
+            <div style={{ position: 'relative', height: '22px', borderBottom: '1px solid var(--line)' }}>
               {ganttMarks.map(m => (
-                <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
-                  <div style={{ width: '1px', height: '100%', background: 'var(--line)' }} />
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', paddingLeft: '3px', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{m.label}</span>
+                <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0 }}>
+                  <div style={{ width: '1px', height: '100%', background: '#d1d5db' }} />
+                  <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '10px', fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{m.label}</span>
                 </div>
               ))}
+              {/* Today marker on scale */}
+              <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#3b82f6', zIndex: 2 }}>
+                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '10px', fontWeight: 700, color: '#3b82f6', whiteSpace: 'nowrap' }}>Today</span>
+              </div>
             </div>
+          </div>
 
-            {/* One row per window */}
+          {/* Window rows */}
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', gap: '0' }}>
             {windows.map(win => {
               const stats    = windowStats(win)
               const color    = stats.required === 0 ? '#94a3b8' : stats.open === 0 ? '#16a34a' : '#d97706'
@@ -301,8 +314,12 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                     {fmt(win.start_date)} – {fmt(win.end_date)}
                   </div>
                   <div key={win.id + '-bar'} style={{ position: 'relative', height: '28px' }}>
+                    {/* Grid lines from scale */}
+                    {ganttMarks.map(m => (
+                      <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, width: '1px', background: '#f0f0f0', zIndex: 0 }} />
+                    ))}
                     {/* Today line */}
-                    <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#e4e4e7', zIndex: 1, pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#bfdbfe', zIndex: 1, pointerEvents: 'none' }} />
                     <div
                       onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
                       title={`${fmt(win.start_date)} – ${fmt(win.end_date)} · ${stats.assigned}/${stats.required} dispatched`}
