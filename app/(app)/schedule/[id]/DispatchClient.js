@@ -266,9 +266,10 @@ export default function DispatchClient({ project, workers, windows: initialWindo
       {/* ── Gantt strip ── */}
       {ganttSpan && windows.length > 0 && (
         <section className="panel" style={{ padding: '12px 20px 14px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', gap: '0' }}>
             {/* Column headers */}
             <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', paddingBottom: '6px' }}>Window</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', paddingBottom: '6px' }}>Dates</div>
             <div style={{ position: 'relative', height: '20px' }}>
               {ganttMarks.map(m => (
                 <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
@@ -291,6 +292,13 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                     style={{ fontSize: '12px', fontWeight: isActive ? 700 : 500, color: isActive ? '#111' : 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', paddingRight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   >
                     {win.description || 'Unnamed'}
+                  </div>
+                  <div
+                    key={win.id + '-dates'}
+                    onClick={() => { setSelectedWindow(isActive ? null : win.id); setSelectedTrade(null); setWorkerSearch('') }}
+                    style={{ fontSize: '11px', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', paddingRight: '12px', whiteSpace: 'nowrap' }}
+                  >
+                    {fmt(win.start_date)} – {fmt(win.end_date)}
                   </div>
                   <div key={win.id + '-bar'} style={{ position: 'relative', height: '28px' }}>
                     {/* Today line */}
