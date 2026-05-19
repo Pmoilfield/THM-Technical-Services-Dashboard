@@ -22,6 +22,21 @@ export default function LayoutShell({ sidebar, children }) {
     if (savedC === 'true') setCollapsed(true)
   }, [])
 
+  // Click outside to close
+  useEffect(() => {
+    function handleClick(e) {
+      if (collapsed) return
+      const sidebar = document.getElementById('sidebar-panel')
+      const toggle  = document.getElementById('sidebar-toggle')
+      if (sidebar && !sidebar.contains(e.target) && toggle && !toggle.contains(e.target)) {
+        setCollapsed(true)
+        localStorage.setItem('sidebar-collapsed', 'true')
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [collapsed])
+
   function toggleSidebar() {
     setCollapsed(c => {
       const next = !c
@@ -67,7 +82,7 @@ export default function LayoutShell({ sidebar, children }) {
 
       {/* Sidebar wrapper */}
       <div style={{ width: sidebarW, minWidth: sidebarW, flexShrink: 0, position: 'relative', transition: 'width 0.22s ease, min-width 0.22s ease' }}>
-        <div style={{ width, position: 'fixed', top: 0, left: collapsed ? -width : 0, height: '100vh', zIndex: 100, overflow: 'hidden', transition: 'left 0.22s ease' }}>
+        <div id="sidebar-panel" style={{ width, position: 'fixed', top: 0, left: collapsed ? -width : 0, height: '100vh', zIndex: 100, overflow: 'hidden', transition: 'left 0.22s ease' }}>
           {sidebar}
           {/* Drag handle */}
           {!collapsed && (
@@ -101,6 +116,7 @@ export default function LayoutShell({ sidebar, children }) {
 
       {/* Hamburger toggle button */}
       <button
+        id="sidebar-toggle"
         onClick={toggleSidebar}
         onMouseEnter={() => setBtnHover(true)}
         onMouseLeave={() => setBtnHover(false)}
