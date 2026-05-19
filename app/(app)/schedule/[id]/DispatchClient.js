@@ -308,7 +308,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
           {/* Date scale axis */}
           <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 1fr', marginBottom: '6px' }}>
             <div /><div />
-            <div style={{ position: 'relative', height: '22px', borderBottom: '1px solid var(--line)' }}>
+            <div style={{ position: 'relative', height: '22px', borderBottom: '1px solid var(--line)', marginTop: '16px' }}>
               {ganttMarks.map(m => (
                 <div key={m.label} style={{ position: 'absolute', left: m.pct + '%', top: 0, bottom: 0 }}>
                   <div style={{ width: '1px', height: '100%', background: '#d1d5db' }} />
@@ -317,7 +317,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
               ))}
               {/* Today marker on scale */}
               <div style={{ position: 'absolute', left: gpct(todayStr) + '%', top: 0, bottom: 0, width: '2px', background: '#3b82f6', zIndex: 2 }}>
-                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '10px', fontWeight: 700, color: '#3b82f6', whiteSpace: 'nowrap' }}>Today</span>
+                <span style={{ position: 'absolute', top: '-16px', left: '4px', fontSize: '10px', fontWeight: 700, color: '#3b82f6', whiteSpace: 'nowrap', background: 'white', padding: '0 2px' }}>Today</span>
               </div>
             </div>
           </div>
