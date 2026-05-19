@@ -65,7 +65,7 @@ button.icon { padding: 0 8px; }
 }
 .main-content {
   flex: 1;
-  padding: 24px;
+  padding: 24px 24px 24px 52px;
   max-width: 1540px;
 }
 .page-header {
