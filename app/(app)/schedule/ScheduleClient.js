@@ -32,6 +32,14 @@ export default function ScheduleClient({ projects, workers, windows, requirement
       const end   = saturday.toISOString().split('T')[0]
       return { spanStart: start, spanEnd: end, spanMs: ms(end) - ms(start) + 86400000 }
     }
+    if (viewMode === '2week') {
+      const now = new Date(); now.setHours(0,0,0,0)
+      const sunday = new Date(now.getTime() - now.getDay() * 86400000)
+      const end2w  = new Date(sunday.getTime() + 13 * 86400000)
+      const start  = sunday.toISOString().split('T')[0]
+      const end    = end2w.toISOString().split('T')[0]
+      return { spanStart: start, spanEnd: end, spanMs: ms(end) - ms(start) + 86400000 }
+    }
     const valid = projects.filter(p => p.start_date)
     if (!valid.length) { const t = todayStr(); return { spanStart: t, spanEnd: t, spanMs: 1 } }
     const s = Math.min(...valid.map(p => ms(p.start_date)))
@@ -46,7 +54,7 @@ export default function ScheduleClient({ projects, workers, windows, requirement
   const pct  = d      => d ? Math.max(0, ((ms(d) - ms(spanStart)) / spanMs) * 100) : 0
   // In week view add 1 day to end so bars fill the full day column
   const snapEnd = e => {
-    if (!e || viewMode !== 'week') return e
+    if (!e || (viewMode !== 'week' && viewMode !== '2week')) return e
     const d = new Date(e + 'T00:00:00'); d.setDate(d.getDate() + 1)
     return d.toISOString().split('T')[0]
   }
@@ -54,8 +62,8 @@ export default function ScheduleClient({ projects, workers, windows, requirement
 
   const timeMarks = useMemo(() => {
     const marks = []
-    if (viewMode === 'week') {
-      // one tick per day Sun–Sat
+    if (viewMode === 'week' || viewMode === '2week') {
+      // one tick per day
       let d = new Date(spanStart + 'T00:00:00')
       const end = new Date(spanEnd + 'T00:00:00')
       while (d <= end) {
@@ -167,7 +175,7 @@ export default function ScheduleClient({ projects, workers, windows, requirement
             <h2 style={{ fontSize: '14px', fontWeight: 700 }}>Manpower Loading</h2>
 
             <div style={{ display: 'flex', gap: '3px', background: '#f4f4f5', borderRadius: '6px', padding: '2px' }}>
-              {[['week','Week'],['month','Month'],['quarter','Quarter']].map(([v, label]) => (
+              {[['week','Week'],['2week','2 Week'],['month','Month'],['quarter','Quarter']].map(([v, label]) => (
                 <button key={v} onClick={() => setViewMode(v)} style={{
                   fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '4px', border: 'none', cursor: 'pointer',
                   background: viewMode === v ? '#fff' : 'transparent',
