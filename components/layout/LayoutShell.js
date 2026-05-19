@@ -81,6 +81,24 @@ export default function LayoutShell({ sidebar, children }) {
         </div>
       </div>
 
+      {/* Logo — visible only when sidebar is collapsed */}
+      <img
+        src="/logo.png"
+        alt="THM Technical Services"
+        style={{
+          position: 'fixed',
+          top: '10px',
+          left: '52px',
+          height: '38px',
+          width: 'auto',
+          objectFit: 'contain',
+          zIndex: 199,
+          opacity: collapsed ? 1 : 0,
+          pointerEvents: 'none',
+          transition: 'opacity 0.22s ease',
+        }}
+      />
+
       {/* Hamburger toggle button */}
       <button
         onClick={toggleSidebar}
