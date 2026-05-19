@@ -89,7 +89,7 @@ export default function LayoutShell({ sidebar, children }) {
         title={collapsed ? 'Show sidebar' : 'Hide sidebar'}
         style={{
           position: 'fixed',
-          top: '14px',
+          top: '18px',
           left: sidebarW + 10,
           zIndex: 200,
           width: '30px',
