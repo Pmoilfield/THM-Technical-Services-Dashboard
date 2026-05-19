@@ -452,7 +452,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                 </div>
 
                 {/* Manpower + Available */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
 
                   {/* Left: manpower required */}
                   <div>
@@ -570,7 +570,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                                   {certs.map(c => <CertBadge key={c.id} cert={c} />)}
                                 </div>
                               </div>
-                              <button className="small primary" onClick={async () => {
+                              <button className="small primary" style={{ flexShrink: 0 }} onClick={async () => {
                                 const trade = workerTrade(w)
                                 if (trade) { const req = winReqs.find(r => r.trade === trade); await upsertRequirement(win.id, trade, (req?.headcount || 0) + 1) }
                                 addAssignment(win.id, w.id, trade)
@@ -595,7 +595,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
                                     <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>⚠ {w.conflict}</span>
                                   </div>
                                 </div>
-                                <button className="small" onClick={async () => {
+                                <button className="small" style={{ flexShrink: 0 }} onClick={async () => {
                                   const trade = workerTrade(w)
                                   if (trade) { const req = winReqs.find(r => r.trade === trade); await upsertRequirement(win.id, trade, (req?.headcount || 0) + 1) }
                                   addAssignment(win.id, w.id, trade)
