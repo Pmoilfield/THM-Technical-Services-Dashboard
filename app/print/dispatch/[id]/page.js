@@ -72,9 +72,9 @@ export default async function PrintDispatchPage({ params }) {
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', paddingBottom: '14px', borderBottom: '2px solid #111' }}>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.5px' }}>THM Technical Services</div>
-              <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>Field Dispatch Notice</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="THM Technical Services" style={{ height: '52px', width: 'auto', objectFit: 'contain' }} />
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '15px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dispatch</div>

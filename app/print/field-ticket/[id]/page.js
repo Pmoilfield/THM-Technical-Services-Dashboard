@@ -39,9 +39,9 @@ export default async function FieldTicketPrintPage({ params }) {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', borderBottom: '2px solid #b91c1c', paddingBottom: '8px' }}>
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#b91c1c', letterSpacing: '-0.5px' }}>THM Technical Services</div>
-            <div style={{ fontSize: '9px', color: '#64748b' }}>Partnership. Precision. Results.</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="THM Technical Services" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '15px', fontWeight: 700 }}>Field Ticket</div>
