@@ -284,9 +284,14 @@ export default function DispatchClient({ project, workers, windows: initialWindo
       <div className="page-header">
         <div className="split">
           <div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '13px', fontWeight: 600, padding: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              ← Back to Project
+            </button>
             <button onClick={() => router.push('/schedule')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '13px', fontWeight: 600, padding: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
               ← Schedule
             </button>
+          </div>
             <h1>{project.name}</h1>
             <p className="muted">{[project.internal_job_no, project.client_name, project.location, `${fmt(project.start_date)} – ${fmt(project.end_date)}`].filter(Boolean).join(' · ')}</p>
           </div>
