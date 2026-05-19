@@ -291,7 +291,7 @@ export default function DispatchClient({ project, workers, windows: initialWindo
             <p className="muted">{[project.internal_job_no, project.client_name, project.location, `${fmt(project.start_date)} – ${fmt(project.end_date)}`].filter(Boolean).join(' · ')}</p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => window.open(`/schedule/${project.id}/print`, '_blank')} style={{ fontSize: '13px', fontWeight: 600, padding: '7px 14px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🖨 Print Dispatches</button>
+            <button onClick={() => window.open(`/print/dispatch/${project.id}`, '_blank')} style={{ fontSize: '13px', fontWeight: 600, padding: '7px 14px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>🖨 Print Dispatches</button>
             <button className="primary" onClick={() => setAddingWindow(true)}>+ Add Window</button>
           </div>
         </div>
