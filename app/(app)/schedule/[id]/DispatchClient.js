@@ -236,7 +236,16 @@ export default function DispatchClient({ project, workers, windows: initialWindo
     const spanDays = ganttSpan.spanMs / 86400000
     const marks = []
 
-    if (spanDays <= 90) {
+    if (spanDays <= 30) {
+      // Daily marks
+      let d = new Date(ganttSpan.start + 'T00:00:00')
+      const end = new Date(ganttSpan.end + 'T00:00:00')
+      while (d <= end) {
+        const p = ((d.getTime() - ms(ganttSpan.start)) / ganttSpan.spanMs) * 100
+        if (p >= 0 && p <= 100) marks.push({ label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }), pct: p })
+        d = new Date(d); d.setDate(d.getDate() + 1)
+      }
+    } else if (spanDays <= 90) {
       // Weekly marks — find first Monday on or after span start
       let d = new Date(ganttSpan.start + 'T00:00:00')
       const dow = d.getDay()
