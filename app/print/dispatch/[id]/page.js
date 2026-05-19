@@ -22,7 +22,7 @@ export default async function PrintDispatchPage({ params }) {
     { data: rates },
   ] = await Promise.all([
     supabase.from('projects').select('*').eq('id', id).single(),
-    supabase.from('project_crew_windows').select('*, crew_window_requirements(*)').eq('project_id', id).order('start_date'),
+    supabase.from('project_crew_windows').select('*').eq('project_id', id).order('start_date'),
     ids.length ? supabase.from('crew_window_assignments').select('*').in('window_id', ids) : { data: [] },
     supabase.from('workers').select('id, name, default_rate_id').eq('active', true),
     supabase.from('rates').select('id, category, personnel'),
@@ -36,142 +36,112 @@ export default async function PrintDispatchPage({ params }) {
   for (const a of (assignments || [])) {
     const worker = (workers || []).find(w => w.id === a.worker_id)
     if (!worker) continue
-    if (!byWorker[a.worker_id]) byWorker[a.worker_id] = { worker, trade: rateMap[worker.default_rate_id] || a.trade || '—', windows: [] }
+    if (!byWorker[a.worker_id]) byWorker[a.worker_id] = { worker, trade: rateMap[worker.default_rate_id] || a.trade || '—', wins: [] }
     const win = (windows || []).find(w => w.id === a.window_id)
-    if (win) byWorker[a.worker_id].windows.push({ win, assignment: a })
+    if (win) byWorker[a.worker_id].wins.push({ win, a })
   }
 
-  const dispatches = Object.values(byWorker).sort((a, b) => a.worker.name.localeCompare(b.worker.name))
-  const printedOn = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+  const dispatches = Object.values(byWorker).sort((x, y) => x.worker.name.localeCompare(y.worker.name))
+  const printedOn  = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+
+  const s = { fontFamily: 'Arial, sans-serif', color: '#111', fontSize: '13px' }
+  const th = { padding: '7px 10px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', background: '#111', color: '#fff', textAlign: 'left', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }
+  const td = { padding: '9px 10px', borderBottom: '1px solid #e5e5e5', fontSize: '12px', verticalAlign: 'top' }
 
   return (
-    <>
+    <div style={s}>
       <style>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #e5e7eb; }
-
-        .page {
-          width: 210mm;
-          min-height: 297mm;
-          margin: 20px auto;
-          padding: 18mm 18mm 14mm;
-          background: #fff;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-          page-break-after: always;
-        }
-        .page:last-child { page-break-after: avoid; }
-
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px solid #111; }
-        .company { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-        .company-sub { font-size: 11px; color: #555; margin-top: 2px; }
-        .doc-title { text-align: right; }
-        .doc-title h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .doc-title p { font-size: 11px; color: #555; margin-top: 2px; }
-
-        .project-box { background: #f8f8f8; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; }
-        .field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #666; display: block; }
-        .field p { font-size: 13px; font-weight: 600; margin-top: 1px; }
-
-        .worker-name { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
-        .worker-trade { font-size: 12px; color: #444; margin-bottom: 16px; }
-
-        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        th { background: #111; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 7px 10px; text-align: left; }
-        td { padding: 9px 10px; border-bottom: 1px solid #e5e5e5; font-size: 12px; vertical-align: top; }
-        tr:last-child td { border-bottom: none; }
-        tr:nth-child(even) td { background: #fafafa; }
-
-        .signature { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .sig-block { border-top: 1px solid #333; padding-top: 6px; }
-        .sig-block label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
-        .sig-space { height: 40px; }
-
-        .footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
-
         @media print {
-          body { background: #fff; }
           .no-print { display: none !important; }
-          .page { margin: 0; box-shadow: none; }
+          @page { margin: 12mm; }
         }
+        body { background: #e5e7eb; }
+        @media print { body { background: #fff; } }
       `}</style>
 
-      <PrintButtons projectId={id} />
+      <PrintButtons />
 
       {dispatches.length === 0 && (
-        <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '16px' }}>
+        <div style={{ width: '210mm', margin: '40px auto', padding: '40px', background: '#fff', textAlign: 'center', color: '#888', fontSize: '16px' }}>
           No workers dispatched to this project yet.
         </div>
       )}
 
-      {dispatches.map(({ worker, trade, windows: workerWindows }) => (
-        <div key={worker.id} className="page">
+      {dispatches.map(({ worker, trade, wins }) => (
+        <div key={worker.id} style={{ width: '210mm', minHeight: '270mm', margin: '20px auto', padding: '18mm 18mm 14mm', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.12)', pageBreakAfter: 'always' }}>
 
-          <div className="header">
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', paddingBottom: '14px', borderBottom: '2px solid #111' }}>
             <div>
-              <div className="company">THM Technical Services</div>
-              <div className="company-sub">Field Dispatch Notice</div>
+              <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.5px' }}>THM Technical Services</div>
+              <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>Field Dispatch Notice</div>
             </div>
-            <div className="doc-title">
-              <h2>Dispatch</h2>
-              <p>Issued: {printedOn}</p>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '15px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dispatch</div>
+              <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>Issued: {printedOn}</div>
             </div>
           </div>
 
-          <div className="project-box">
-            <div className="field"><label>Project</label><p>{project.name}</p></div>
-            <div className="field"><label>Job #</label><p>{project.internal_job_no || '—'}</p></div>
-            <div className="field"><label>Client</label><p>{project.client_name || '—'}</p></div>
-            <div className="field"><label>Location</label><p>{project.location || '—'}</p></div>
+          {/* Project info */}
+          <div style={{ background: '#f8f8f8', border: '1px solid #ddd', borderRadius: '6px', padding: '12px 16px', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px' }}>
+            {[['Project', project.name], ['Job #', project.internal_job_no || '—'], ['Client', project.client_name || '—'], ['Location', project.location || '—']].map(([label, val]) => (
+              <div key={label}>
+                <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666' }}>{label}</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '1px' }}>{val}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="worker-name">{worker.name}</div>
-          <div className="worker-trade">{trade}</div>
+          {/* Worker */}
+          <div style={{ fontSize: '20px', fontWeight: 800, marginBottom: '2px' }}>{worker.name}</div>
+          <div style={{ fontSize: '12px', color: '#444', marginBottom: '16px' }}>{trade}</div>
 
-          <table>
+          {/* Windows table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
             <thead>
               <tr>
-                <th>Phase / Window</th>
-                <th>Onsite Start</th>
-                <th>Onsite End</th>
-                <th>Duration</th>
+                <th style={th}>Phase / Window</th>
+                <th style={th}>Onsite Start</th>
+                <th style={th}>Onsite End</th>
+                <th style={th}>Duration</th>
               </tr>
             </thead>
             <tbody>
-              {workerWindows
-                .sort((a, b) => (a.assignment.onsite_start || '') > (b.assignment.onsite_start || '') ? 1 : -1)
-                .map(({ win, assignment }) => {
-                  const s = assignment.onsite_start || win.start_date
-                  const e = assignment.onsite_end   || win.end_date
-                  const days = s && e ? Math.round((new Date(e) - new Date(s)) / 86400000) + 1 : null
+              {wins
+                .sort((x, y) => (x.a.onsite_start || '') > (y.a.onsite_start || '') ? 1 : -1)
+                .map(({ win, a }, i) => {
+                  const start = a.onsite_start || win.start_date
+                  const end   = a.onsite_end   || win.end_date
+                  const days  = start && end ? Math.round((new Date(end) - new Date(start)) / 86400000) + 1 : null
                   return (
                     <tr key={win.id}>
-                      <td style={{ fontWeight: 600 }}>{win.description || 'Crew Window'}</td>
-                      <td>{fmtShort(s)}</td>
-                      <td>{fmtShort(e)}</td>
-                      <td>{days ? `${days} day${days !== 1 ? 's' : ''}` : '—'}</td>
+                      <td style={{ ...td, fontWeight: 600, background: i % 2 === 1 ? '#fafafa' : '#fff' }}>{win.description || 'Crew Window'}</td>
+                      <td style={{ ...td, background: i % 2 === 1 ? '#fafafa' : '#fff' }}>{fmtShort(start)}</td>
+                      <td style={{ ...td, background: i % 2 === 1 ? '#fafafa' : '#fff' }}>{fmtShort(end)}</td>
+                      <td style={{ ...td, background: i % 2 === 1 ? '#fafafa' : '#fff' }}>{days ? `${days} day${days !== 1 ? 's' : ''}` : '—'}</td>
                     </tr>
                   )
                 })}
             </tbody>
           </table>
 
-          <div className="signature">
-            <div className="sig-block">
-              <div className="sig-space" />
-              <label>Worker Signature</label>
-            </div>
-            <div className="sig-block">
-              <div className="sig-space" />
-              <label>Date Acknowledged</label>
-            </div>
+          {/* Signature */}
+          <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+            {['Worker Signature', 'Date Acknowledged'].map(label => (
+              <div key={label} style={{ borderTop: '1px solid #333', paddingTop: '6px' }}>
+                <div style={{ height: '40px' }} />
+                <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#555' }}>{label}</div>
+              </div>
+            ))}
           </div>
 
-          <div className="footer">
+          {/* Footer */}
+          <div style={{ marginTop: '28px', paddingTop: '10px', borderTop: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#999' }}>
             <span>THM Technical Services · Confidential</span>
             <span>{project.name} · {worker.name}</span>
           </div>
         </div>
       ))}
-    </>
+    </div>
   )
 }
