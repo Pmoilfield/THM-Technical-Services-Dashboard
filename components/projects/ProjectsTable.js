@@ -311,9 +311,11 @@ export default function ProjectsTable({ rows }) {
                   <QuickNoteCell projectId={project.id} initial={project.quick_note} />
                 </td>
                 <td>{project.client_name || '—'}</td>
-                <td style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
-                  <QuickStatusUpdate projectId={project.id} currentStatus={project.status} />
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
+                    <QuickStatusUpdate projectId={project.id} currentStatus={project.status} />
+                  </div>
                 </td>
                 <td onClick={e => e.stopPropagation()}>
                   <QuickManagerCell projectId={project.id} initial={project.project_manager} suggestions={unique('project_manager')} />
