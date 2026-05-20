@@ -25,6 +25,9 @@ export default function NewProjectPage() {
     client_job_no: '',
     client_po_number: '',
     project_manager: '',
+    client_project_manager: '',
+    construction_manager: '',
+    project_engineer: '',
     gst_rate: '0.05',
     description: '',
   })
@@ -64,6 +67,9 @@ export default function NewProjectPage() {
         client_job_no: '',
         client_po_number: '',
         project_manager: project.project_manager || '',
+        client_project_manager: project.client_project_manager || '',
+        construction_manager: project.construction_manager || '',
+        project_engineer: project.project_engineer || '',
         gst_rate: String(project.gst_rate || 0.05),
         description: project.description || '',
       })
@@ -94,6 +100,9 @@ export default function NewProjectPage() {
         client_job_no: form.client_job_no || null,
         client_po_number: form.client_po_number || null,
         project_manager: form.project_manager || null,
+        client_project_manager: form.client_project_manager || null,
+        construction_manager: form.construction_manager || null,
+        project_engineer: form.project_engineer || null,
         gst_rate: parseFloat(form.gst_rate) || 0.05,
         description: form.description || null,
       })
@@ -259,12 +268,27 @@ export default function NewProjectPage() {
             </label>
 
             <label>
-              Project manager
+              Project manager (THM)
               <input
                 value={form.project_manager}
                 onChange={e => set('project_manager', e.target.value)}
                 placeholder="e.g. Parker"
               />
+            </label>
+
+            <label>
+              Client project manager
+              <input value={form.client_project_manager} onChange={e => set('client_project_manager', e.target.value)} placeholder="Client-side PM" />
+            </label>
+
+            <label>
+              Construction manager
+              <input value={form.construction_manager} onChange={e => set('construction_manager', e.target.value)} placeholder="Client-side CM" />
+            </label>
+
+            <label>
+              Project engineer
+              <input value={form.project_engineer} onChange={e => set('project_engineer', e.target.value)} placeholder="Client-side engineer" />
             </label>
 
             <label>
