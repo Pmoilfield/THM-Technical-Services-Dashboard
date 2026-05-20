@@ -210,6 +210,25 @@ export default function EstimateBuilder({ project, initialSections, initialItems
     setSections(prev => prev.filter(s => s._key !== key))
   }
 
+  function duplicateSection(key) {
+    setSections(prev => {
+      const idx = prev.findIndex(s => s._key === key)
+      if (idx === -1) return prev
+      const src = prev[idx]
+      const copy = {
+        ...src,
+        _key: Math.random(),
+        id: undefined,
+        number: prev.length + 1,
+        title: src.title ? `${src.title} (copy)` : '',
+        items: src.items.map(item => ({ ...item, _key: Math.random(), id: undefined })),
+      }
+      const next = [...prev]
+      next.splice(idx + 1, 0, copy)
+      return next.map((s, i) => ({ ...s, number: i + 1 }))
+    })
+  }
+
   function updateSection(key, field, value) {
     setSections(prev => prev.map(s => s._key === key ? { ...s, [field]: value } : s))
   }
@@ -425,8 +444,9 @@ export default function EstimateBuilder({ project, initialSections, initialItems
                   style={{ fontWeight: 600, fontSize: '13px', padding: '8px 10px', lineHeight: '1.5', minHeight: '60px', resize: 'vertical', flex: 1, wordBreak: 'break-word', overflowWrap: 'break-word' }}
                 />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                 <strong style={{ fontSize: '18px' }}>{money(sectionTotal)}</strong>
+                <button type="button" className="small" onClick={() => duplicateSection(section._key)} title="Duplicate this section with all line items">⧉ Copy section</button>
                 <button className="small danger" onClick={() => removeSection(section._key)}>Remove section</button>
               </div>
             </div>
