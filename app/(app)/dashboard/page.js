@@ -1,4 +1,5 @@
-﻿import { createServerSupabase } from '@/lib/supabase-server'
+﻿import { redirect } from 'next/navigation'
+import { createServerSupabase } from '@/lib/supabase-server'
 import { money, pct, n, statusClass, calculateAccruals } from '@/lib/calculations'
 import Link from 'next/link'
 import ClickableRow from '@/components/ui/ClickableRow'
@@ -17,6 +18,15 @@ function StatCard({ label, value, sub, cls }) {
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabase()
+
+  // Workers and foremen don't see the portfolio dashboard
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (['worker', 'foreman'].includes(profile?.role)) {
+      redirect('/my-schedule')
+    }
+  }
 
   // Fetch everything needed for portfolio view
   const [
