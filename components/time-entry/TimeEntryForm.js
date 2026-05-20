@@ -8,7 +8,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-export default function TimeEntryForm({ projects, workers, recentEntries }) {
+export default function TimeEntryForm({ projects, workers, recentEntries, lockedWorker = null }) {
   const supabase = createBrowserSupabase()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -19,7 +19,7 @@ export default function TimeEntryForm({ projects, workers, recentEntries }) {
   const today = new Date().toISOString().split('T')[0]
 
   const [form, setForm] = useState({
-    worker_id: '',
+    worker_id: lockedWorker?.id || '',
     project_id: '',
     date: today,
     travel_hours: '',
@@ -68,7 +68,7 @@ export default function TimeEntryForm({ projects, workers, recentEntries }) {
   function startEdit(entry) {
     setEditingId(entry.id)
     setForm({
-      worker_id: entry.worker_id,
+      worker_id: lockedWorker?.id || entry.worker_id,
       project_id: entry.project_id,
       date: entry.date,
       travel_hours: entry.travel_hours?.toString() || '',
@@ -87,7 +87,7 @@ export default function TimeEntryForm({ projects, workers, recentEntries }) {
 
   function cancelEdit() {
     setEditingId(null)
-    setForm({ worker_id: '', project_id: '', date: today, travel_hours: '', reg_hours: '', ot_hours: '', notes: '' })
+    setForm({ worker_id: lockedWorker?.id || '', project_id: '', date: today, travel_hours: '', reg_hours: '', ot_hours: '', notes: '' })
   }
 
   const inputNum = { type: 'number', step: '0.5', min: '0', style: { textAlign: 'center' } }
@@ -98,22 +98,29 @@ export default function TimeEntryForm({ projects, workers, recentEntries }) {
         <div className="split">
           <div>
             <h1>Time Entry</h1>
-            <p className="muted">Record daily hours per worker per project</p>
+            <p className="muted">{lockedWorker ? 'Log your daily hours' : 'Record daily hours per worker per project'}</p>
           </div>
         </div>
       </div>
 
       <section className="panel">
         <h2>{editingId ? 'Edit Entry' : 'Log Time'}</h2>
+        {lockedWorker && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '5px 10px', marginBottom: '10px', fontSize: '13px', color: '#15803d', fontWeight: 600 }}>
+            👷 {lockedWorker.name}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="grid two" style={{ marginTop: '14px', gap: '12px' }}>
-            <label>
-              Worker *
-              <select value={form.worker_id} onChange={e => set('worker_id', e.target.value)} required>
-                <option value="">— Select worker —</option>
-                {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
-            </label>
+            {!lockedWorker && (
+              <label>
+                Worker *
+                <select value={form.worker_id} onChange={e => set('worker_id', e.target.value)} required>
+                  <option value="">— Select worker —</option>
+                  {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              </label>
+            )}
             <label>
               Date
               <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
