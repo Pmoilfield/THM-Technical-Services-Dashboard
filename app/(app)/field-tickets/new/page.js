@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 import Link from 'next/link'
-import jsPDF from 'jspdf'
 
 function FileDropModal({ onFile, onClose }) {
   const [dragging, setDragging] = useState(false)
@@ -89,243 +88,6 @@ function money(v) {
   return '$' + (parseFloat(v) || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function exportPDF(form, items, projects, subtotal, labourTotal, equipmentTotal, materialTotal, subTotal) {
-  const doc = new jsPDF()
-  const pageHeight = doc.internal.pageSize.height
-  const pageWidth = doc.internal.pageSize.width
-  const margin = 12
-  let y = 14
-
-  const project = projects.find(p => p.id === form.project_id)
-  const projectName = project ? project.name : '(No project selected)'
-
-  // Header
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  doc.setTextColor(204, 0, 0)
-  doc.text('THM Technical Services', margin, y)
-  doc.setFontSize(9)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Partnership. Precision. Results.', margin, y + 5)
-
-  doc.setFontSize(12)
-  doc.setTextColor(0, 0, 0)
-  doc.text('Field Ticket', pageWidth - 50, y, { align: 'right' })
-  doc.setFontSize(9)
-  doc.text(`Date: ${form.date}`, pageWidth - 50, y + 5, { align: 'right' })
-
-  // Red line under header
-  doc.setDrawColor(204, 0, 0)
-  doc.setLineWidth(0.8)
-  doc.line(margin, y + 8, pageWidth - margin, y + 8)
-  y += 16
-
-  // Project details in grid
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(80, 80, 80)
-
-  // Left column
-  doc.setFont('helvetica', 'bold')
-  doc.text('Project:', margin, y)
-  doc.setFont('helvetica', 'normal')
-  doc.text(projectName, margin + 18, y)
-  y += 5
-
-  if (project?.location) {
-    doc.setFont('helvetica', 'bold')
-    doc.text('Location:', margin, y)
-    doc.setFont('helvetica', 'normal')
-    doc.text(project.location, margin + 18, y)
-    y += 5
-  }
-
-  if (project?.client_job_no) {
-    doc.setFont('helvetica', 'bold')
-    doc.text('Client Job:', margin, y)
-    doc.setFont('helvetica', 'normal')
-    doc.text(project.client_job_no, margin + 18, y)
-  }
-
-  // Right column
-  y = y - 10
-  const rightCol = pageWidth - 80
-
-  if (project?.client_name) {
-    doc.setFont('helvetica', 'bold')
-    doc.text('Client:', rightCol, y)
-    doc.setFont('helvetica', 'normal')
-    doc.text(project.client_name, rightCol + 16, y)
-    y += 5
-  }
-
-  if (project?.project_manager) {
-    doc.setFont('helvetica', 'bold')
-    doc.text('Manager:', rightCol, y)
-    doc.setFont('helvetica', 'normal')
-    doc.text(project.project_manager, rightCol + 16, y)
-  }
-
-  y += 12
-
-  // Description section
-  if (form.description) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(100, 100, 100)
-    const descLines = doc.splitTextToSize(form.description, pageWidth - 2 * margin)
-    doc.text(descLines, margin, y)
-    y += descLines.length * 3.5 + 3
-  }
-
-  // Labour items
-  const labourItems = items.filter(i => i.type === 'Labour' && (calcItemTotal(i) > 0 || i.description || i.worker_name))
-  if (labourItems.length > 0) {
-    if (y > pageHeight - 50) { doc.addPage(); y = margin }
-
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('LABOUR', margin, y)
-    y += 4
-
-    // Table header
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(80, 80, 80)
-    const colX = { role: margin, days: 60, regHrs: 85, regRate: 110, otHrs: 135, otRate: 160, total: 175 }
-    doc.text('ROLE', colX.role, y)
-    doc.text('DAYS', colX.days, y)
-    doc.text('REG HRS', colX.regHrs, y)
-    doc.text('REG RATE', colX.regRate, y)
-    doc.text('OT HRS', colX.otHrs, y)
-    doc.text('OT RATE', colX.otRate, y)
-    doc.text('TOTAL', colX.total, y)
-
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.1)
-    doc.line(margin, y + 1, pageWidth - margin, y + 1)
-    y += 5
-
-    // Table rows
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(0, 0, 0)
-
-    labourItems.forEach(item => {
-      if (y > pageHeight - 10) { doc.addPage(); y = margin }
-      const days = item.straight_hours ? Math.ceil(item.straight_hours / 8) : 0
-      doc.text(item.role || item.worker_name || '—', colX.role, y)
-      doc.text(days.toString(), colX.days, y)
-      doc.text((item.straight_hours || 0).toString(), colX.regHrs, y)
-      doc.text('$' + (item.straight_rate || '0.00'), colX.regRate, y)
-      doc.text((item.overtime_hours || 0).toString(), colX.otHrs, y)
-      doc.text('$' + (item.overtime_rate || '0.00'), colX.otRate, y)
-      doc.text(money(calcItemTotal(item)), colX.total, y)
-      y += 3.5
-    })
-    y += 2
-  }
-
-  // Equipment items
-  const equipmentItems = items.filter(i => i.type === 'Equipment' && (calcItemTotal(i) > 0 || i.description))
-  if (equipmentItems.length > 0) {
-    if (y > pageHeight - 50) { doc.addPage(); y = margin }
-
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('EQUIPMENT', margin, y)
-    y += 4
-
-    // Table header
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(80, 80, 80)
-    const eqColX = { equip: margin, qty: 85, units: 110, rate: 145, markup: 175, total: 200 }
-    doc.text('EQUIPMENT', eqColX.equip, y)
-    doc.text('QTY', eqColX.qty, y)
-    doc.text('UNITS', eqColX.units, y)
-    doc.text('RATE', eqColX.rate, y)
-    doc.text('MARKUP', eqColX.markup, y)
-    doc.text('TOTAL', eqColX.total, y)
-
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.1)
-    doc.line(margin, y + 1, pageWidth - margin, y + 1)
-    y += 5
-
-    // Table rows
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(0, 0, 0)
-
-    equipmentItems.forEach(item => {
-      if (y > pageHeight - 10) { doc.addPage(); y = margin }
-      doc.text(item.description || '—', eqColX.equip, y)
-      doc.text((item.quantity || 0).toString(), eqColX.qty, y)
-      doc.text(item.equip_period || 'day', eqColX.units, y)
-      doc.text('$' + (item.unit_cost || '0.00'), eqColX.rate, y)
-      doc.text('—', eqColX.markup, y)
-      doc.text(money(calcItemTotal(item)), eqColX.total, y)
-      y += 3.5
-    })
-    y += 2
-  }
-
-  // Totals section
-  if (y > pageHeight - 25) { doc.addPage(); y = margin }
-
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, pageWidth - margin, y)
-  y += 5
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(0, 0, 0)
-
-  if (labourTotal > 0) {
-    doc.text('Labour', margin, y)
-    doc.text(money(labourTotal), pageWidth - margin - 20, y, { align: 'right' })
-    y += 4
-  }
-  if (equipmentTotal > 0) {
-    doc.text('Equipment', margin, y)
-    doc.text(money(equipmentTotal), pageWidth - margin - 20, y, { align: 'right' })
-    y += 4
-  }
-  if (materialTotal > 0) {
-    doc.text('Material', margin, y)
-    doc.text(money(materialTotal), pageWidth - margin - 20, y, { align: 'right' })
-    y += 4
-  }
-  if (subTotal > 0) {
-    doc.text('Subcontractor', margin, y)
-    doc.text(money(subTotal), pageWidth - margin - 20, y, { align: 'right' })
-    y += 4
-  }
-
-  y += 2
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, pageWidth - margin, y)
-  y += 5
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text('TOTAL', margin, y)
-  doc.text(money(subtotal), pageWidth - margin - 20, y, { align: 'right' })
-
-  // Open in print window
-  const pdfBlob = doc.output('blob')
-  const pdfUrl = URL.createObjectURL(pdfBlob)
-  const printWindow = window.open(pdfUrl, '_blank')
-  if (printWindow) {
-    printWindow.onload = () => {
-      printWindow.print()
-    }
-  }
-}
 
 export default function NewFieldTicketPage() {
   const router = useRouter()
@@ -336,6 +98,7 @@ export default function NewFieldTicketPage() {
   const [rates, setRates] = useState([])
   const [workers, setWorkers] = useState([])
   const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [quoteModal, setQuoteModal] = useState(null)
   const [uploading, setUploading] = useState(null)
@@ -450,6 +213,69 @@ export default function NewFieldTicketPage() {
   const subTotal = items.filter(i => i.type === 'Subcontractor').reduce((s, i) => s + calcItemTotal(i), 0)
   const subtotal = labourTotal + equipmentTotal + materialTotal + subTotal
 
+  async function exportDraft() {
+    if (!form.project_id) { setError('Please select a project before exporting.'); return }
+    setError('')
+    setExporting(true)
+
+    const date = form.date.replace(/-/g, '')
+    const rand = Math.floor(Math.random() * 900) + 100
+    const ticket_number = `FT-${date}-${rand}`
+
+    const { data: ticket, error: ticketErr } = await supabase
+      .from('field_tickets')
+      .insert({
+        project_id: form.project_id,
+        ticket_number,
+        date: form.date,
+        section_number: form.section_number ? parseInt(form.section_number) : null,
+        description: form.description || null,
+        status: 'draft',
+        labour_total: labourTotal,
+        equipment_total: equipmentTotal,
+        material_total: materialTotal,
+        subcontractor_total: subTotal,
+        subtotal,
+      })
+      .select()
+      .single()
+
+    if (ticketErr) { setError(ticketErr.message); setExporting(false); return }
+
+    const lineItems = items
+      .filter(i => calcItemTotal(i) > 0 || i.description || i.worker_name)
+      .map((item, idx) => ({
+        ticket_id: ticket.id,
+        type: item.type,
+        worker_name: item.worker_name || null,
+        role: item.role || null,
+        rate_id: item.rate_id || null,
+        description: item.description || null,
+        vendor: item.vendor || null,
+        markup: item.markup_pct ? parseFloat(item.markup_pct) / 100 : null,
+        straight_hours: parseFloat(item.straight_hours) || null,
+        straight_rate: parseFloat(item.straight_rate) || null,
+        overtime_hours: parseFloat(item.overtime_hours) || null,
+        overtime_rate: parseFloat(item.overtime_rate) || null,
+        travel_hours: parseFloat(item.travel_hours) || null,
+        quantity: parseFloat(item.quantity) || null,
+        unit_cost: parseFloat(item.unit_cost) || null,
+        equip_period: item.type === 'Equipment' ? (item.equip_period || 'daily') : null,
+        quote_url: item.quote_url || null,
+        quote_filename: item.quote_filename || null,
+        total: calcItemTotal(item),
+        sort_order: idx,
+      }))
+
+    if (lineItems.length) {
+      await supabase.from('field_ticket_items').insert(lineItems)
+    }
+
+    setExporting(false)
+    window.open(`/print/field-ticket/${ticket.id}`, '_blank')
+    router.push(`/field-tickets/${ticket.id}`)
+  }
+
   async function save(status) {
     if (!form.project_id) { setError('Please select a project.'); return }
     setError('')
@@ -530,7 +356,7 @@ export default function NewFieldTicketPage() {
             <p className="muted">Assemble crew time and equipment into a billable ticket</p>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button type="button" onClick={() => exportPDF(form, items, projects, subtotal, labourTotal, equipmentTotal, materialTotal, subTotal)}>Export PDF</button>
+            <button type="button" onClick={exportDraft} disabled={exporting}>{exporting ? 'Saving…' : 'Export PDF'}</button>
             <Link href="/field-tickets"><button>Cancel</button></Link>
           </div>
         </div>
