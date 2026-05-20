@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 import { saveEstimate } from '@/app/actions/saveEstimate'
@@ -118,6 +118,16 @@ export default function EstimateBuilder({ project, initialSections, initialItems
   const dragSrcRef = useRef(null)
   const [itemDragOver, setItemDragOver] = useState(null)
   const itemDragSrcRef = useRef(null)
+
+  // ── Autosave state ────────────────────────────────────────────────────
+  // status: 'idle' | 'dirty' | 'saving' | 'saved' | 'error'
+  const [autosaveStatus, setAutosaveStatus] = useState('idle')
+  const [lastSavedAt, setLastSavedAt] = useState(null)
+  const [savedTick, setSavedTick] = useState(0) // refresh "5s ago" label
+  const dbSaveTimerRef = useRef(null)
+  const lsSaveTimerRef = useRef(null)
+  const firstRunRef = useRef(true)
+  const draftKey = `estimate-draft-${project.id}`
 
   function handleDragStart(e, idx) {
     dragSrcRef.current = idx
@@ -311,16 +321,97 @@ export default function EstimateBuilder({ project, initialSections, initialItems
   const grandTotal = sections.reduce((s, sec) => s + sec.items.reduce((t, i) => t + calcItemTotal(i), 0), 0)
   const gstAmount = grandTotal * (parseFloat(project.gst_rate) || 0.05)
 
-  async function save() {
+  async function save(navigate = true) {
     setSaving(true)
     setError('')
     const result = await saveEstimate(project.id, sections, grandTotal, gstAmount)
     if (result?.error) {
       setError(result.error)
       setSaving(false)
+      setAutosaveStatus('error')
+      return { error: result.error }
+    }
+    setSaving(false)
+    setLastSavedAt(Date.now())
+    setAutosaveStatus('saved')
+    try { localStorage.removeItem(draftKey) } catch (e) {}
+    if (navigate) window.location.href = `/projects/${project.id}`
+    return { ok: true }
+  }
+
+  // ── Autosave: localStorage draft (every 2s after change) ──────────────
+  useEffect(() => {
+    if (firstRunRef.current) {
+      firstRunRef.current = false
+      // On mount, see if there's an unsaved draft newer than the server state
+      try {
+        const raw = localStorage.getItem(draftKey)
+        if (raw) {
+          const draft = JSON.parse(raw)
+          const sameAsServer = JSON.stringify(draft.sections) === JSON.stringify(initialSections)
+          if (!sameAsServer && draft.sections) {
+            const ago = Math.round((Date.now() - draft.t) / 1000)
+            if (confirm(`Unsaved changes from ${ago}s ago were found. Restore them?`)) {
+              setSections(draft.sections)
+              setAutosaveStatus('dirty')
+              return
+            } else {
+              localStorage.removeItem(draftKey)
+            }
+          }
+        }
+      } catch (e) {}
       return
     }
-    window.location.href = `/projects/${project.id}`
+
+    // Mark dirty immediately
+    setAutosaveStatus(s => (s === 'saving' ? s : 'dirty'))
+
+    // Debounced localStorage save (1s)
+    if (lsSaveTimerRef.current) clearTimeout(lsSaveTimerRef.current)
+    lsSaveTimerRef.current = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify({ t: Date.now(), sections })) } catch (e) {}
+    }, 1000)
+
+    // Debounced DB autosave (5s of inactivity)
+    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current)
+    dbSaveTimerRef.current = setTimeout(async () => {
+      setAutosaveStatus('saving')
+      await save(false)
+    }, 5000)
+
+    return () => {
+      if (lsSaveTimerRef.current) clearTimeout(lsSaveTimerRef.current)
+      if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections])
+
+  // Refresh the "saved Ns ago" indicator every 5s
+  useEffect(() => {
+    if (!lastSavedAt) return
+    const id = setInterval(() => setSavedTick(t => t + 1), 5000)
+    return () => clearInterval(id)
+  }, [lastSavedAt])
+
+  function autosaveLabel() {
+    if (autosaveStatus === 'saving') return 'Saving…'
+    if (autosaveStatus === 'error')  return 'Save failed'
+    if (autosaveStatus === 'dirty')  return 'Unsaved changes'
+    if (lastSavedAt) {
+      const secs = Math.round((Date.now() - lastSavedAt) / 1000)
+      if (secs < 5)   return 'Saved just now'
+      if (secs < 60)  return `Saved ${secs}s ago`
+      if (secs < 3600) return `Saved ${Math.floor(secs/60)}m ago`
+      return `Saved ${Math.floor(secs/3600)}h ago`
+    }
+    return ''
+  }
+  const autosaveColor = () => {
+    if (autosaveStatus === 'error') return '#b91c1c'
+    if (autosaveStatus === 'dirty') return '#b45309'
+    if (autosaveStatus === 'saving') return '#1d4ed8'
+    return '#15803d'
   }
 
   const pre$ = { position: 'relative', display: 'flex', alignItems: 'center' }
@@ -340,12 +431,15 @@ export default function EstimateBuilder({ project, initialSections, initialItems
             <h1>Estimate — {project.name}</h1>
             <p className="muted">{project.client_name} · {project.internal_job_no || project.estimate_no || ''}</p>
           </div>
-          <div className="toolbar">
+          <div className="toolbar" style={{ alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: autosaveColor(), minWidth: '110px', textAlign: 'right' }} title="Autosaves every 5s while editing">
+              {autosaveLabel()}
+            </span>
             <Link href={`/projects/${project.id}`}><button>Cancel</button></Link>
             <a href={`/print/estimate/${project.id}`} target="_blank" rel="noreferrer">
               <button type="button">Export PDF</button>
             </a>
-            <button className="primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save estimate'}</button>
+            <button className="primary" onClick={() => save(true)} disabled={saving}>{saving ? 'Saving...' : 'Save & close'}</button>
           </div>
         </div>
       </div>
