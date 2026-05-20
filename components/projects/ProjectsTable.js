@@ -1,8 +1,83 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createBrowserSupabase } from '@/lib/supabase'
 import { money, pct, statusClass } from '@/lib/calculations'
 import QuickStatusUpdate from './QuickStatusUpdate'
+
+function QuickNoteCell({ projectId, initial }) {
+  const supabase = createBrowserSupabase()
+  const [value, setValue] = useState(initial || '')
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef()
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.select()
+    }
+  }, [editing])
+
+  async function save() {
+    if (value === (initial || '')) { setEditing(false); return }
+    setSaving(true)
+    await supabase.from('projects').update({ quick_note: value || null }).eq('id', projectId)
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={e => {
+          if (e.key === 'Escape') { setValue(initial || ''); setEditing(false) }
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save()
+        }}
+        onClick={e => e.stopPropagation()}
+        placeholder="Add reminder…"
+        rows={2}
+        style={{
+          width: '100%',
+          minWidth: '180px',
+          fontSize: '12px',
+          padding: '4px 6px',
+          resize: 'vertical',
+          border: '1px solid #6b7280',
+          borderRadius: '4px',
+        }}
+      />
+    )
+  }
+
+  return (
+    <div
+      onClick={e => { e.stopPropagation(); setEditing(true) }}
+      style={{
+        cursor: 'text',
+        minWidth: '160px',
+        maxWidth: '240px',
+        fontSize: '12px',
+        color: value ? '#fef3c7' : '#9ca3af',
+        background: value ? '#78350f' : 'transparent',
+        padding: value ? '3px 7px' : '3px 4px',
+        borderRadius: '4px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        opacity: saving ? 0.5 : 1,
+        fontStyle: value ? 'normal' : 'italic',
+        fontWeight: value ? 600 : 400,
+      }}
+      title={value ? 'Click to edit' : 'Click to add a note'}
+    >
+      {value || '+ note'}
+    </div>
+  )
+}
 
 function useClickOutside(ref, onClose) {
   useEffect(() => {
@@ -134,6 +209,7 @@ export default function ProjectsTable({ rows }) {
             <tr>
               <th style={{ ...thStyle, whiteSpace: 'nowrap' }}>Job #</th>
               <th style={thStyle}>Project</th>
+              <th style={thStyle}>Notes</th>
               <th style={thStyle}>
                 <ColumnFilter label="Client" values={unique('client_name')} selected={filters.client} onChange={v => setFilter('client', v)} />
               </th>
@@ -164,6 +240,9 @@ export default function ProjectsTable({ rows }) {
                     <div className="fine-print">{project.estimate_no || '—'}</div>
                   </div>
                 </td>
+                <td onClick={e => e.stopPropagation()}>
+                  <QuickNoteCell projectId={project.id} initial={project.quick_note} />
+                </td>
                 <td>{project.client_name || '—'}</td>
                 <td style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
@@ -180,7 +259,7 @@ export default function ProjectsTable({ rows }) {
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="10" className="empty">No projects match your filters.</td></tr>
+              <tr><td colSpan="11" className="empty">No projects match your filters.</td></tr>
             )}
           </tbody>
         </table>
