@@ -5,6 +5,73 @@ import { createBrowserSupabase } from '@/lib/supabase'
 import { money, pct, statusClass } from '@/lib/calculations'
 import QuickStatusUpdate from './QuickStatusUpdate'
 
+function QuickManagerCell({ projectId, initial, suggestions = [] }) {
+  const supabase = createBrowserSupabase()
+  const [value, setValue] = useState(initial || '')
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef()
+  const listId = `pm-list-${projectId}`
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
+
+  async function save() {
+    if (value === (initial || '')) { setEditing(false); return }
+    setSaving(true)
+    await supabase.from('projects').update({ project_manager: value || null }).eq('id', projectId)
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <>
+        <input
+          ref={inputRef}
+          list={listId}
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onBlur={save}
+          onKeyDown={e => {
+            if (e.key === 'Escape') { setValue(initial || ''); setEditing(false) }
+            if (e.key === 'Enter') save()
+          }}
+          onClick={e => e.stopPropagation()}
+          placeholder="Manager"
+          style={{ width: '120px', fontSize: '13px', padding: '3px 6px', border: '1px solid #6b7280', borderRadius: '4px' }}
+        />
+        <datalist id={listId}>
+          {suggestions.filter(Boolean).map(s => <option key={s} value={s} />)}
+        </datalist>
+      </>
+    )
+  }
+
+  return (
+    <div
+      onClick={e => { e.stopPropagation(); setEditing(true) }}
+      style={{
+        cursor: 'text',
+        minWidth: '80px',
+        fontSize: '13px',
+        color: value ? 'inherit' : '#d1d5db',
+        padding: '2px 4px',
+        borderRadius: '4px',
+        opacity: saving ? 0.5 : 1,
+        fontStyle: value ? 'normal' : 'italic',
+      }}
+      title={value ? 'Click to change' : 'Click to assign'}
+    >
+      {value || '—'}
+    </div>
+  )
+}
+
 function QuickNoteCell({ projectId, initial }) {
   const supabase = createBrowserSupabase()
   const [value, setValue] = useState(initial || '')
@@ -248,7 +315,9 @@ export default function ProjectsTable({ rows }) {
                   <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
                   <QuickStatusUpdate projectId={project.id} currentStatus={project.status} />
                 </td>
-                <td>{project.project_manager || '—'}</td>
+                <td onClick={e => e.stopPropagation()}>
+                  <QuickManagerCell projectId={project.id} initial={project.project_manager} suggestions={unique('project_manager')} />
+                </td>
                 <td className="numeric">{money(estimate)}</td>
                 <td className="numeric">{money(gst)}</td>
                 <td className="numeric">{money(accrualsToDate)}</td>
