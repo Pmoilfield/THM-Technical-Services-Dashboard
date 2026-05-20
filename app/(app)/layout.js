@@ -15,8 +15,10 @@ export default async function AppLayout({ children }) {
     .eq('id', session.user.id)
     .single()
 
+  const isWorker = ['worker', 'foreman'].includes(profile?.role)
+
   return (
-    <LayoutShell sidebar={<Sidebar user={session.user} profile={profile} />}>
+    <LayoutShell sidebar={<Sidebar user={session.user} profile={profile} isWorker={isWorker} />}>
       {children}
     </LayoutShell>
   )

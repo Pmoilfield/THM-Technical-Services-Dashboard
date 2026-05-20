@@ -4,19 +4,24 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 
 const NAV = [
-  { href: '/dashboard',      label: 'Dashboard'    },
-  { href: '/proposals',      label: 'BD Tracker'   },
-  { href: '/projects',       label: 'Projects' },
-  { href: '/field-tickets',    label: 'Field Tickets'},
+  { href: '/dashboard',       label: 'Dashboard'       },
+  { href: '/proposals',       label: 'BD Tracker'      },
+  { href: '/projects',        label: 'Projects'        },
+  { href: '/field-tickets',   label: 'Field Tickets'   },
   { href: '/purchase-orders', label: 'Purchase Orders' },
-  { href: '/invoices',        label: 'Invoices'     },
-  { href: '/financials',     label: 'Financials'   },
-  { href: '/schedule',       label: 'Schedule'     },
-  { href: '/rates',          label: 'Rate Schedules' },
-  { href: '/time-entry',     label: 'Time Entry'   },
-  { href: '/employees',      label: 'Employees'    },
-  { href: '/vendors',        label: 'Vendors'      },
-  { href: '/payroll',        label: 'Payroll'      },
+  { href: '/invoices',        label: 'Invoices'        },
+  { href: '/financials',      label: 'Financials'      },
+  { href: '/schedule',        label: 'Schedule'        },
+  { href: '/rates',           label: 'Rate Schedules'  },
+  { href: '/time-entry',      label: 'Time Entry'      },
+  { href: '/employees',       label: 'Employees'       },
+  { href: '/vendors',         label: 'Vendors'         },
+  { href: '/payroll',         label: 'Payroll'         },
+]
+
+const NAV_WORKER = [
+  { href: '/my-schedule',  label: 'My Schedule'  },
+  { href: '/time-entry',   label: 'Time Entry'   },
 ]
 
 const NAV_ADMIN = [
@@ -24,7 +29,7 @@ const NAV_ADMIN = [
   { href: '/settings', label: 'Settings' },
 ]
 
-export default function Sidebar({ user, profile }) {
+export default function Sidebar({ user, profile, isWorker = false }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createBrowserSupabase()
@@ -47,7 +52,7 @@ export default function Sidebar({ user, profile }) {
 
       {/* Main nav */}
       <nav style={{ flex: 1, padding: '8px 10px' }}>
-        {NAV.map(item => {
+        {(isWorker ? NAV_WORKER : NAV).map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link key={item.href} href={item.href} style={{
@@ -69,7 +74,7 @@ export default function Sidebar({ user, profile }) {
           )
         })}
 
-        {(isAdmin || isBilling) && (
+        {!isWorker && (isAdmin || isBilling) && (
           <>
             <div style={{ height: '1px', background: 'var(--line)', margin: '10px 0' }} />
             {NAV_ADMIN.map(item => {
