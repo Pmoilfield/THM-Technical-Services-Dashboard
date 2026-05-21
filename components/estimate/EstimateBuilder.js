@@ -127,6 +127,7 @@ export default function EstimateBuilder({ project, initialSections, initialItems
   const dbSaveTimerRef = useRef(null)
   const lsSaveTimerRef = useRef(null)
   const firstRunRef = useRef(true)
+  const saveInFlightRef = useRef(false)
   const draftKey = `estimate-draft-${project.id}`
 
   function handleDragStart(e, idx) {
@@ -322,19 +323,40 @@ export default function EstimateBuilder({ project, initialSections, initialItems
   const gstAmount = grandTotal * (parseFloat(project.gst_rate) || 0.05)
 
   async function save(navigate = true) {
+    if (saveInFlightRef.current) return { skipped: true }
+    saveInFlightRef.current = true
     setSaving(true)
     setError('')
-    const result = await saveEstimate(project.id, sections, grandTotal, gstAmount)
+
+    // Snapshot the sections we're saving so we can map IDs back by index
+    const snapshot = sections
+    const result = await saveEstimate(project.id, snapshot, grandTotal, gstAmount)
+
     if (result?.error) {
       setError(result.error)
       setSaving(false)
       setAutosaveStatus('error')
+      saveInFlightRef.current = false
       return { error: result.error }
     }
+
+    // Apply DB IDs back to any sections that didn't have one yet.
+    // Match by reference (_key) to avoid clobbering edits made while save was in flight.
+    if (result.sectionIds && Array.isArray(result.sectionIds)) {
+      setSections(prev => prev.map(s => {
+        if (s.id) return s
+        const snapIdx = snapshot.findIndex(snap => snap._key === s._key)
+        if (snapIdx === -1) return s
+        const newId = result.sectionIds[snapIdx]
+        return newId ? { ...s, id: newId } : s
+      }))
+    }
+
     setSaving(false)
     setLastSavedAt(Date.now())
     setAutosaveStatus('saved')
     try { localStorage.removeItem(draftKey) } catch (e) {}
+    saveInFlightRef.current = false
     if (navigate) window.location.href = `/projects/${project.id}`
     return { ok: true }
   }

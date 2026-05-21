@@ -13,6 +13,8 @@ export async function saveEstimate(projectId, sections, grandTotal, gstAmount) {
 
   const supabase = createAdminSupabase()
 
+  const sectionIds = []
+
   for (const [sectionIdx, section] of sections.entries()) {
     const sectionNumber = sectionIdx + 1
     let sectionId = section._id || section.id
@@ -35,6 +37,7 @@ export async function saveEstimate(projectId, sections, grandTotal, gstAmount) {
       if (updateErr) return { error: updateErr.message }
     }
 
+    sectionIds.push(sectionId)
     await supabase.from('estimate_items').delete().eq('section_id', sectionId)
 
     const lineItems = section.items.map((item, idx) => ({
@@ -74,5 +77,5 @@ export async function saveEstimate(projectId, sections, grandTotal, gstAmount) {
   if (projErr) return { error: projErr.message }
 
   revalidatePath('/', 'layout')
-  return { success: true }
+  return { success: true, sectionIds }
 }
