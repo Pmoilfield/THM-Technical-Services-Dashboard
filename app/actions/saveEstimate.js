@@ -13,6 +13,23 @@ export async function saveEstimate(projectId, sections, grandTotal, gstAmount) {
 
   const supabase = createAdminSupabase()
 
+  // Find sections that exist in the DB but are no longer in the submitted list
+  // (e.g. user deleted them) and remove them, along with their line items.
+  const submittedIds = new Set(
+    sections.map(s => s._id || s.id).filter(Boolean)
+  )
+  const { data: existingSections } = await supabase
+    .from('estimate_sections')
+    .select('id')
+    .eq('project_id', projectId)
+  const idsToDelete = (existingSections || [])
+    .map(s => s.id)
+    .filter(id => !submittedIds.has(id))
+  if (idsToDelete.length) {
+    await supabase.from('estimate_items').delete().in('section_id', idsToDelete)
+    await supabase.from('estimate_sections').delete().in('id', idsToDelete)
+  }
+
   const sectionIds = []
 
   for (const [sectionIdx, section] of sections.entries()) {

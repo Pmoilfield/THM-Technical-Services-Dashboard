@@ -395,16 +395,11 @@ export default function EstimateBuilder({ project, initialSections, initialItems
       try { localStorage.setItem(draftKey, JSON.stringify({ t: Date.now(), sections })) } catch (e) {}
     }, 1000)
 
-    // Debounced DB autosave (5s of inactivity)
-    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current)
-    dbSaveTimerRef.current = setTimeout(async () => {
-      setAutosaveStatus('saving')
-      await save(false)
-    }, 5000)
+    // DB autosave disabled — use the explicit Save & close button.
+    // (Hybrid autosave was causing duplicate sections.)
 
     return () => {
       if (lsSaveTimerRef.current) clearTimeout(lsSaveTimerRef.current)
-      if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections])
@@ -454,7 +449,7 @@ export default function EstimateBuilder({ project, initialSections, initialItems
             <p className="muted">{project.client_name} · {project.internal_job_no || project.estimate_no || ''}</p>
           </div>
           <div className="toolbar" style={{ alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: autosaveColor(), minWidth: '110px', textAlign: 'right' }} title="Autosaves every 5s while editing">
+            <span style={{ fontSize: '12px', fontWeight: 600, color: autosaveColor(), minWidth: '140px', textAlign: 'right' }} title="Drafts are kept in your browser. Click Save & close to commit changes.">
               {autosaveLabel()}
             </span>
             <Link href={`/projects/${project.id}`}><button>Cancel</button></Link>
