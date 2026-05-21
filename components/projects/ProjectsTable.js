@@ -3,72 +3,116 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabase } from '@/lib/supabase'
 import { money, pct, statusClass } from '@/lib/calculations'
-import QuickStatusUpdate from './QuickStatusUpdate'
 
-function QuickManagerCell({ projectId, initial, suggestions = [] }) {
+const STATUSES = ['Estimating', 'Submitted', 'Awarded', 'Active', 'Complete', 'On Hold', 'Cancelled']
+
+const STATUS_STYLE = {
+  Estimating: { bg: '#e0e7ff', color: '#3730a3' },
+  Submitted:  { bg: '#fef3c7', color: '#92400e' },
+  Awarded:    { bg: '#d1fae5', color: '#065f46' },
+  Active:     { bg: '#dcfce7', color: '#15803d' },
+  Complete:   { bg: '#e0f2fe', color: '#0369a1' },
+  'On Hold':  { bg: '#fef3c7', color: '#b45309' },
+  Cancelled:  { bg: '#fee2e2', color: '#b91c1c' },
+}
+
+function StatusDropdown({ projectId, initial }) {
   const supabase = createBrowserSupabase()
-  const [value, setValue] = useState(initial || '')
-  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(initial)
   const [saving, setSaving] = useState(false)
-  const inputRef = useRef()
-  const listId = `pm-list-${projectId}`
+  const style = STATUS_STYLE[value] || { bg: '#f3f4f6', color: '#374151' }
 
-  useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-    }
-  }, [editing])
-
-  async function save() {
-    if (value === (initial || '')) { setEditing(false); return }
+  async function handleChange(e) {
+    e.stopPropagation()
+    const next = e.target.value
+    setValue(next)
     setSaving(true)
-    await supabase.from('projects').update({ project_manager: value || null }).eq('id', projectId)
+    await supabase.from('projects').update({ status: next }).eq('id', projectId)
     setSaving(false)
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <>
-        <input
-          ref={inputRef}
-          list={listId}
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onBlur={save}
-          onKeyDown={e => {
-            if (e.key === 'Escape') { setValue(initial || ''); setEditing(false) }
-            if (e.key === 'Enter') save()
-          }}
-          onClick={e => e.stopPropagation()}
-          placeholder="Manager"
-          style={{ width: '120px', fontSize: '13px', padding: '3px 6px', border: '1px solid #6b7280', borderRadius: '4px' }}
-        />
-        <datalist id={listId}>
-          {suggestions.filter(Boolean).map(s => <option key={s} value={s} />)}
-        </datalist>
-      </>
-    )
   }
 
   return (
-    <div
-      onClick={e => { e.stopPropagation(); setEditing(true) }}
+    <select
+      value={value}
+      onChange={handleChange}
+      onClick={e => e.stopPropagation()}
+      disabled={saving}
       style={{
-        cursor: 'text',
-        minWidth: '80px',
-        fontSize: '13px',
-        color: value ? 'inherit' : '#d1d5db',
-        padding: '2px 4px',
-        borderRadius: '4px',
+        background: style.bg,
+        color: style.color,
+        border: 'none',
+        borderRadius: '99px',
+        padding: '3px 22px 3px 10px',
+        fontSize: '11px',
+        fontWeight: 700,
+        cursor: 'pointer',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='${encodeURIComponent(style.color)}' d='M0 0l5 6 5-6z'/></svg>")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 7px center',
         opacity: saving ? 0.5 : 1,
-        fontStyle: value ? 'normal' : 'italic',
       }}
-      title={value ? 'Click to change' : 'Click to assign'}
     >
-      {value || '—'}
-    </div>
+      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+    </select>
+  )
+}
+
+function ManagerDropdown({ projectId, initial, suggestions = [] }) {
+  const supabase = createBrowserSupabase()
+  const [value, setValue] = useState(initial || '')
+  const [saving, setSaving] = useState(false)
+  const options = useMemo(() => {
+    const set = new Set(suggestions.filter(Boolean))
+    if (value) set.add(value)
+    return [...set].sort()
+  }, [suggestions, value])
+
+  async function handleChange(e) {
+    e.stopPropagation()
+    let next = e.target.value
+    if (next === '__add') {
+      const name = prompt('Add a new manager name:')?.trim()
+      if (!name) return
+      next = name
+    }
+    if (next === value) return
+    setValue(next)
+    setSaving(true)
+    await supabase.from('projects').update({ project_manager: next || null }).eq('id', projectId)
+    setSaving(false)
+  }
+
+  return (
+    <select
+      value={value}
+      onChange={handleChange}
+      onClick={e => e.stopPropagation()}
+      disabled={saving}
+      style={{
+        fontSize: '13px',
+        padding: '3px 22px 3px 8px',
+        border: '1px solid transparent',
+        borderRadius: '6px',
+        background: '#fff',
+        cursor: 'pointer',
+        minWidth: '120px',
+        color: value ? '#111' : '#9ca3af',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%239ca3af' d='M0 0l5 6 5-6z'/></svg>")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 6px center',
+        opacity: saving ? 0.5 : 1,
+      }}
+      onMouseEnter={e => e.target.style.borderColor = '#d1d5db'}
+      onMouseLeave={e => e.target.style.borderColor = 'transparent'}
+    >
+      <option value="">— Unassigned —</option>
+      {options.map(s => <option key={s} value={s}>{s}</option>)}
+      <option value="__add">+ Add new…</option>
+    </select>
   )
 }
 
@@ -311,14 +355,11 @@ export default function ProjectsTable({ rows }) {
                   <QuickNoteCell projectId={project.id} initial={project.quick_note} />
                 </td>
                 <td>{project.client_name || '—'}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className={`status-pill ${statusClass(project.status)}`}>{project.status}</span>
-                    <QuickStatusUpdate projectId={project.id} currentStatus={project.status} />
-                  </div>
+                <td onClick={e => e.stopPropagation()}>
+                  <StatusDropdown projectId={project.id} initial={project.status} />
                 </td>
                 <td onClick={e => e.stopPropagation()}>
-                  <QuickManagerCell projectId={project.id} initial={project.project_manager} suggestions={unique('project_manager')} />
+                  <ManagerDropdown projectId={project.id} initial={project.project_manager} suggestions={unique('project_manager')} />
                 </td>
                 <td className="numeric">{money(estimate)}</td>
                 <td className="numeric">{money(gst)}</td>
